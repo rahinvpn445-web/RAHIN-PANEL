@@ -2007,7 +2007,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#0a1128', card: '#111d3d', input: '#0d1730', border: '#233264' } }
                 }
             }
         }
@@ -2015,16 +2015,16 @@ const HTML_TEMPLATES = {
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-amoled-bg dark:text-zinc-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl shadow-xl p-8 text-center flex flex-col items-center gap-4">
-        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-full mb-2">
+        <div class="p-4 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-500 rounded-full mb-2">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">ورود به پنل مدیریت</h2>
         <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-2">
             برای ورود به پنل، لطفاً عبارت 
-            <span class="inline-block px-2 py-1 bg-gray-100 dark:bg-amoled-input border border-gray-200 dark:border-zinc-800 rounded-md font-mono text-blue-500 font-bold mx-1 shadow-sm" dir="ltr">/panel</span> 
+            <span class="inline-block px-2 py-1 bg-gray-100 dark:bg-amoled-input border border-gray-200 dark:border-zinc-800 rounded-md font-mono text-cyan-500 font-bold mx-1 shadow-sm" dir="ltr">/panel</span> 
             را به انتهای آدرس مرورگر خود اضافه کنید.
         </p>
-        <button onclick="window.location.href='/panel'" class="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition-colors duration-200 shadow-lg shadow-blue-600/20 font-bold">
+        <button onclick="window.location.href='/panel'" class="mt-4 w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-xl text-sm transition-colors duration-200 shadow-lg shadow-cyan-600/20 font-bold">
             ورود به پنل
         </button>
     </div>
@@ -2044,7 +2044,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#0a1128', card: '#111d3d', input: '#0d1730', border: '#233264' } }
                 }
             }
         }
@@ -2052,18 +2052,18 @@ const HTML_TEMPLATES = {
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-amoled-bg dark:text-zinc-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl shadow-xl p-6">
-        <h2 class="text-xl font-bold mb-2 text-center text-blue-600 dark:text-blue-400">تنظیم رمز عبور جدید</h2>
+        <h2 class="text-xl font-bold mb-2 text-center text-cyan-600 dark:text-cyan-400">تنظیم رمز عبور جدید</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">این اولین ورود شما به پنل مدیریت است. لطفاً رمز عبور خود را تعیین کنید.</p>
         <form onsubmit="handleSetup(event)" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium mb-1.5">رمز عبور</label>
-                <input type="password" id="password" class="w-full px-3 py-2 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center font-mono" required minlength="4">
+                <input type="password" id="password" class="w-full px-3 py-2 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm text-center font-mono" required minlength="4">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1.5">تکرار رمز عبور</label>
-                <input type="password" id="confirm-password" class="w-full px-3 py-2 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center font-mono" required minlength="4">
+                <input type="password" id="confirm-password" class="w-full px-3 py-2 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm text-center font-mono" required minlength="4">
             </div>
-            <button type="submit" id="submit-btn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition font-bold">ثبت و ورود</button>
+            <button type="submit" id="submit-btn" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg text-sm transition font-bold">ثبت و ورود</button>
         </form>
     </div>
     <script>
@@ -2116,7 +2116,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#0a1128', card: '#111d3d', input: '#0d1730', border: '#233264' } }
                 }
             }
         }
@@ -2125,16 +2125,16 @@ const HTML_TEMPLATES = {
 <body class="bg-gray-50 text-gray-900 dark:bg-amoled-bg dark:text-zinc-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl shadow-xl p-6">
         <div id="login-section">
-            <h2 class="text-xl font-bold mb-6 text-center text-blue-600 dark:text-blue-400">ورود به پنل مدیریت</h2>
+            <h2 class="text-xl font-bold mb-6 text-center text-cyan-600 dark:text-cyan-400">ورود به پنل مدیریت</h2>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1.5">رمز عبور</label>
-                    <input type="password" id="password" class="w-full px-3 py-2 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center font-mono" required>
+                    <input type="password" id="password" class="w-full px-3 py-2 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm text-center font-mono" required>
                 </div>
-                <button type="submit" id="submit-btn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition font-bold">ورود</button>
+                <button type="submit" id="submit-btn" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg text-sm transition font-bold">ورود</button>
             </form>
             <div class="mt-4 text-center">
-                <button onclick="toggleRecovery(true)" class="text-xs text-blue-500 hover:text-blue-600 transition font-medium">بازیابی رمز پنل</button>
+                <button onclick="toggleRecovery(true)" class="text-xs text-cyan-500 hover:text-cyan-600 transition font-medium">بازیابی رمز پنل</button>
             </div>
         </div>
         <div id="recovery-section" class="hidden">
@@ -2217,7 +2217,7 @@ const HTML_TEMPLATES = {
 
 	panel: `
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2238,7 +2238,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#0a1128', card: '#111d3d', input: '#0d1730', border: '#233264' } }
                 }
             }
         }
@@ -2278,77 +2278,19 @@ const HTML_TEMPLATES = {
             scrollbar-color: #d1d5db #f3f4f6;
         }
         .dark * {
-            scrollbar-color: #1c2330 #080b0f;
+            scrollbar-color: #233264 #0a1128;
+        }
+        .dark body {
+            background-image:
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34,211,238,0.10), transparent 60%),
+                radial-gradient(ellipse 700px 500px at 100% 0%, rgba(59,130,246,0.08), transparent 55%);
+            background-attachment: fixed;
         }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-amoled-bg dark:text-zinc-100 min-h-screen transition-colors duration-200">
-    <header class="border-b border-gray-200 dark:border-amoled-border bg-white dark:bg-amoled-card px-4 py-4">
+    <header class="border-b border-gray-200 dark:border-amoled-border bg-white dark:bg-gradient-to-l dark:from-[#0d1730] dark:via-[#111d3d] dark:to-[#0d1730] px-4 py-4 dark:shadow-[0_1px_20px_rgba(34,211,238,0.08)]">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex flex-row flex-wrap justify-center items-center gap-3 w-full md:w-auto">
                 <h1 class="text-lg font-bold flex items-center gap-2" dir="ltr">
-                    RAHIN Panel 
-                    <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">v1.5.10</span>
-                </h1>
-                <div class="flex items-center gap-3 bg-gray-100 dark:bg-zinc-800/60 px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800/80 shadow-sm flex-shrink-0 w-fit">
-                    <a href="https://github.com/rahinvpn445-web/RAHIN-PANEL" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-all transform hover:scale-125 duration-200 flex-shrink-0" title="GitHub">
-                        <svg class="w-[22px] h-[22px] flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-                        </svg>
-                    </a>
-                    <a href="https://t.me/Rahin_vpn1" target="_blank" rel="noopener noreferrer" class="text-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition-all transform hover:scale-125 duration-200 flex-shrink-0" title="Telegram">
-                        <svg class="w-[22px] h-[22px] flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.94-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .24z"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-            <div class="flex items-center justify-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-			
-				<button onclick="restartCore()" 
-                        class="p-2 rounded-lg 
-                               bg-blue-50 dark:bg-blue-950/30 
-                               border border-blue-200 dark:border-blue-900 
-                               hover:bg-blue-100 dark:hover:bg-blue-900/50 
-                               transition-all duration-200 
-                               text-blue-600 dark:text-blue-400 shadow-sm" 
-                        title="ری‌استارت هسته ورکر">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                </button>
-				
-                <button id="theme-toggle" 
-                        class="p-2 rounded-lg 
-                               bg-amber-50 dark:bg-amber-950/30 
-                               border border-amber-200 dark:border-amber-900 
-                               hover:bg-amber-100 dark:hover:bg-amber-900/50 
-                               transition-all duration-200 
-                               text-amber-500 dark:text-amber-400 shadow-sm"
-                        title="تغییر تم">
-                    <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                    </svg>
-                </button>
-                
-                <button id="update-toggle" onclick="checkForUpdates(true)" 
-                        class="p-2 rounded-lg 
-                               bg-emerald-50 dark:bg-emerald-950/30 
-                               border border-emerald-200 dark:border-emerald-900 
-                               hover:bg-emerald-100 dark:hover:bg-emerald-900/50 
-                               transition-all duration-200 
-                               text-emerald-600 dark:text-emerald-400 
-                               relative shadow-sm" 
-                        title="Update">
-                    
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
-                    </svg>
-                    <span id="update-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-emerald-50 dark:border-emerald-900 rounded-full hidden animate-pulse"></span>
-                </button>
-                
-                <button onclick="toggleSettingsModal(true)" 
-                        class="p-2 rou
+                    <img src="data:image/png;base64,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
