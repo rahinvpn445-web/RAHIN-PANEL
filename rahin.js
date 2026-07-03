@@ -337,11 +337,14 @@ const Router = {
 					body: formData,
 				});
 				const deployData = await deployRes.json();
-				if (!deployData.success) throw new Error("خطا در اعمال آپدیت در کلودفلر.");
+				if (!deployData.success) {
+					const cfMsg = deployData.errors && deployData.errors.length > 0 ? deployData.errors.map((e) => e.message).join(" | ") : "نامشخص";
+					throw new Error("خطا در اعمال آپدیت در کلودفلر: " + cfMsg);
+				}
 
 				return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 			} catch (err) {
-				const errorMsg = err.message + " | در صورت عدم موفقیت، از طریق لینک زیر آپدیت کنید: https://zeus-panel.ir-netlify.workers.dev/";
+				const errorMsg = err.message;
 				return new Response(JSON.stringify({ error: errorMsg }), { status: 500, headers: { "Content-Type": "application/json" } });
 			}
 		}
@@ -397,7 +400,10 @@ const Router = {
 					body: formData,
 				});
 				const deployData = await deployRes.json();
-				if (!deployData.success) throw new Error("خطا در اعمال ری‌استارت در کلودفلر");
+				if (!deployData.success) {
+					const cfMsg = deployData.errors && deployData.errors.length > 0 ? deployData.errors.map((e) => e.message).join(" | ") : "نامشخص";
+					throw new Error("خطا در اعمال ری‌استارت در کلودفلر: " + cfMsg);
+				}
 
 				return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 			} catch (err) {
@@ -2345,7 +2351,4 @@ const HTML_TEMPLATES = {
                 </button>
                 
                 <button onclick="toggleSettingsModal(true)" 
-                        class="p-2 rounded-lg 
-                               bg-gray-50 dark:bg-zinc-800/50 
-                               border border-gray-200 dark:border-zinc-700 
-                               hover:bg-gray-100 dark:hover:bg-zinc-700
+                        class="p-2 rou
