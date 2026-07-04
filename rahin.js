@@ -2025,7 +2025,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#050b1a', card: '#101a30', input: '#0b1526', border: '#22314f' } }
                 }
             }
         }
@@ -2097,7 +2097,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#050b1a', card: '#101a30', input: '#0b1526', border: '#22314f' } }
                 }
             }
         }
@@ -2198,7 +2198,7 @@ const HTML_TEMPLATES = {
 
 	panel: `
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2219,7 +2219,7 @@ const HTML_TEMPLATES = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#050b1a', card: '#101a30', input: '#0b1526', border: '#22314f' } }
                 }
             }
         }
@@ -2261,192 +2261,207 @@ const HTML_TEMPLATES = {
         .dark * {
             scrollbar-color: #1c2330 #080b0f;
         }
+
+        /* ===== RAHIN v1.1.0 - Neon Navy Theme ===== */
+        .dark body {
+            background:
+                radial-gradient(circle at 15% 0%, rgba(34,211,238,0.08), transparent 40%),
+                radial-gradient(circle at 85% 20%, rgba(168,85,247,0.08), transparent 40%),
+                #050b1a;
+        }
+        .dark .dark\:bg-amoled-card {
+            background-color: rgba(16, 26, 48, 0.72);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .dark .dark\:border-amoled-border {
+            border-color: rgba(34, 211, 238, 0.18);
+        }
+        .dark .dark\:bg-amoled-card:hover,
+        .dark .dark\:border-amoled-border:hover {
+            box-shadow: 0 0 24px -6px rgba(34, 211, 238, 0.25);
+        }
+        .dark .dark\:bg-zinc-900,
+        .dark .dark\:bg-zinc-800,
+        .dark .dark\:bg-zinc-700 {
+            background-color: rgba(16, 26, 48, 0.72) !important;
+        }
+        .dark .dark\:border-zinc-900,
+        .dark .dark\:border-zinc-800,
+        .dark .dark\:border-zinc-700 {
+            border-color: rgba(34, 211, 238, 0.16) !important;
+        }
+        .rahin-icon-glow {
+            filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.55));
+        }
+        .rahin-glow-cyan { color: #22d3ee !important; }
+        .rahin-glow-purple { color: #a78bfa !important; }
+        .rahin-sidebar-active {
+            position: relative;
+            background: rgba(34, 211, 238, 0.12) !important;
+            box-shadow: 0 0 18px -2px rgba(34, 211, 238, 0.5);
+        }
+        .rahin-sidebar-active::before {
+            content: "";
+            position: absolute;
+            top: 6px;
+            bottom: 6px;
+            right: -14px;
+            width: 3px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, #22d3ee, #818cf8);
+            box-shadow: 0 0 10px 1px rgba(34, 211, 238, 0.8);
+        }
+        @media (min-width: 768px) {
+            .rahin-sidebar-push { padding-right: 84px; }
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-amoled-bg dark:text-zinc-100 min-h-screen transition-colors duration-200">
-    <header class="border-b border-gray-200 dark:border-amoled-border bg-white dark:bg-amoled-card px-4 py-4">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex flex-row flex-wrap justify-center items-center gap-3 w-full md:w-auto">
-                <h1 class="text-lg font-bold flex items-center gap-2" dir="ltr">
-                    RAHIN Panel 
-                    <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">v1.0.0</span>
-                </h1>
-                <div class="flex items-center gap-3 bg-gray-100 dark:bg-zinc-800/60 px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800/80 shadow-sm flex-shrink-0 w-fit">
-                    <a href="https://github.com/rahinvpn445-web/RAHIN-PANEL" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-all transform hover:scale-125 duration-200 flex-shrink-0" title="GitHub">
-                        <svg class="w-[22px] h-[22px] flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-                        </svg>
-                    </a>
-                    <a href="https://t.me/Rahin_vpn1" target="_blank" rel="noopener noreferrer" class="text-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition-all transform hover:scale-125 duration-200 flex-shrink-0" title="Telegram">
-                        <svg class="w-[22px] h-[22px] flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.94-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .24z"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-            <div class="flex items-center justify-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-			
-				<button onclick="restartCore()" 
-                        class="p-2 rounded-lg 
-                               bg-blue-50 dark:bg-blue-950/30 
-                               border border-blue-200 dark:border-blue-900 
-                               hover:bg-blue-100 dark:hover:bg-blue-900/50 
-                               transition-all duration-200 
-                               text-blue-600 dark:text-blue-400 shadow-sm" 
-                        title="ری‌استارت هسته ورکر">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                </button>
-				
-                <button id="theme-toggle" 
-                        class="p-2 rounded-lg 
-                               bg-amber-50 dark:bg-amber-950/30 
-                               border border-amber-200 dark:border-amber-900 
-                               hover:bg-amber-100 dark:hover:bg-amber-900/50 
-                               transition-all duration-200 
-                               text-amber-500 dark:text-amber-400 shadow-sm"
-                        title="تغییر تم">
-                    <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                    </svg>
-                </button>
-                
-                <button id="update-toggle" onclick="checkForUpdates(true)" 
-                        class="p-2 rounded-lg 
-                               bg-emerald-50 dark:bg-emerald-950/30 
-                               border border-emerald-200 dark:border-emerald-900 
-                               hover:bg-emerald-100 dark:hover:bg-emerald-900/50 
-                               transition-all duration-200 
-                               text-emerald-600 dark:text-emerald-400 
-                               relative shadow-sm" 
-                        title="آپدیت">
-                    
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
-                    </svg>
-                    <span id="update-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-emerald-50 dark:border-emerald-900 rounded-full hidden animate-pulse"></span>
-                </button>
-                
-                <button onclick="toggleSettingsModal(true)" 
-                        class="p-2 rounded-lg 
-                               bg-gray-50 dark:bg-zinc-800/50 
-                               border border-gray-200 dark:border-zinc-700 
-                               hover:bg-gray-100 dark:hover:bg-zinc-700/80 
-                               transition-all duration-200 
-                               text-gray-600 dark:text-zinc-400 shadow-sm" 
-                        title="تنظیمات">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                </button>
-				
-                <button 
-                    onclick="logoutAdmin()" 
-                    class="p-2 rounded-lg 
-                           bg-red-50 dark:bg-red-950/30 
-                           border border-red-200 dark:border-red-900 
-                           hover:bg-red-100 dark:hover:bg-red-900/50 
-                           transition-all duration-200 
-                           text-red-600 dark:text-red-400 
-                           shadow-sm hover:shadow-md"
+<body class="bg-gray-50 text-gray-900 dark:bg-amoled-bg dark:text-zinc-100 min-h-screen transition-colors duration-200 md:flex md:flex-row-reverse">
+    <aside class="flex flex-row md:flex-col items-center justify-between md:justify-start gap-3 md:gap-3 px-4 py-3 md:py-6 md:w-20 bg-white dark:bg-amoled-card border-b md:border-b-0 md:border-l border-gray-200 dark:border-amoled-border md:fixed md:top-0 md:right-0 md:h-screen z-40">
+        <div class="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-cyan-500/15 to-indigo-500/15 border border-cyan-400/30 flex items-center justify-center rahin-icon-glow flex-shrink-0" title="RAHIN Panel">
+            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2.75l7.25 3.2v5.05c0 4.63-3.1 8.9-7.25 10.25-4.15-1.35-7.25-5.62-7.25-10.25V5.95L12 2.75z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.25l2 2 4-4.25"></path>
+            </svg>
+        </div>
+        <div class="flex flex-row md:flex-col items-center gap-2 md:gap-3">
+            <button onclick="document.querySelector('main').scrollIntoView({behavior:'smooth'})"
+                    class="p-2.5 rounded-xl rahin-sidebar-active text-cyan-400 transition-all duration-200"
+                    title="داشبورد">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </button>
+            <button onclick="restartCore()"
+                    class="p-2.5 rounded-xl bg-transparent hover:bg-cyan-500/10 border border-transparent hover:border-cyan-400/30 transition-all duration-200 text-gray-500 dark:text-zinc-400 hover:text-cyan-400"
+                    title="ری‌استارت هسته ورکر">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+            </button>
+            <button id="update-toggle" onclick="checkForUpdates(true)"
+                    class="p-2.5 rounded-xl bg-transparent hover:bg-cyan-500/10 border border-transparent hover:border-cyan-400/30 transition-all duration-200 text-gray-500 dark:text-zinc-400 hover:text-cyan-400 relative"
+                    title="آپدیت">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
+                </svg>
+                <span id="update-badge" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-amoled-card rounded-full hidden animate-pulse"></span>
+            </button>
+            <button onclick="toggleSettingsModal(true)"
+                    class="p-2.5 rounded-xl bg-transparent hover:bg-purple-500/10 border border-transparent hover:border-purple-400/30 transition-all duration-200 text-gray-500 dark:text-zinc-400 hover:text-purple-400"
+                    title="تنظیمات">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </button>
+            <button id="theme-toggle"
+                    class="p-2.5 rounded-xl bg-transparent hover:bg-amber-500/10 border border-transparent hover:border-amber-400/30 transition-all duration-200 text-gray-500 dark:text-zinc-400 hover:text-amber-400"
+                    title="تغییر تم">
+                <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+            <button onclick="logoutAdmin()"
+                    class="p-2.5 rounded-xl bg-transparent hover:bg-red-500/10 border border-transparent hover:border-red-400/30 transition-all duration-200 text-gray-500 dark:text-zinc-400 hover:text-red-400"
                     title="خروج">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                </button>
-            </div>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="hidden md:flex items-center gap-2.5 mt-auto">
+            <a href="https://github.com/rahinvpn445-web/RAHIN-PANEL" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-cyan-400 transition-all transform hover:scale-125 duration-200" title="GitHub">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+                </svg>
+            </a>
+            <a href="https://t.me/Rahin_vpn1" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-cyan-400 transition-all transform hover:scale-125 duration-200" title="Telegram">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.94-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .24z"/>
+                </svg>
+            </a>
+        </div>
+    </aside>
+    <div class="flex-1 min-w-0 md:pr-20">
+    <header class="border-b border-gray-200 dark:border-amoled-border bg-white dark:bg-amoled-card px-4 py-4">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+            <h1 class="text-lg font-bold flex items-center gap-2" dir="ltr">
+                <span class="font-black">RAHIN</span><span class="font-light text-gray-400 dark:text-zinc-400">Panel</span>
+                <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">v1.1.0</span>
+            </h1>
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Dashboard Overview</p>
         </div>
     </header>
     <main class="max-w-6xl mx-auto px-4 py-8 pb-56 md:pb-32">
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500/50 transition duration-300 relative overflow-hidden group">
-        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
-        <div class="flex items-center justify-between relative z-10 mb-2">
-            <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap">تعداد کل کاربران</span>
-            <div class="p-2 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex-shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            </div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md hover:border-cyan-400 dark:hover:border-cyan-400/50 transition duration-300 relative overflow-hidden group text-center">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
+        <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap relative z-10">تعداد کل کاربران</span>
+        <div class="mx-auto my-4 w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-cyan-500/10 to-indigo-500/10 border border-cyan-400/30 relative z-10">
+            <svg class="w-7 h-7 text-cyan-400 rahin-icon-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
         </div>
-        <div class="space-y-1.5 relative z-10 min-w-0 flex-1">
-            <div class="text-2xl font-black text-gray-900 dark:text-zinc-100 transition-all" id="stat-total-users">0</div>
-            <span class="text-[11px] text-indigo-500 dark:text-indigo-400 flex items-center gap-1 font-medium whitespace-nowrap">
-                <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
-                کل کاربران تعریف شده
-            </span>
-        </div>
+        <div class="text-3xl font-black text-gray-900 dark:text-zinc-100 transition-all relative z-10" id="stat-total-users">0</div>
+        <span class="text-[11px] text-cyan-500 dark:text-cyan-400 flex items-center justify-center gap-1 font-medium whitespace-nowrap relative z-10 mt-2">
+            <span class="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-ping"></span>
+            کل کاربران تعریف شده
+        </span>
     </div>
-    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-500/50 transition duration-300 relative overflow-hidden group">
+    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-400/50 transition duration-300 relative overflow-hidden group text-center">
         <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
-        <div class="flex items-center justify-between relative z-10 mb-2">
-            <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap">کاربران فعال (آنلاین)</span>
-            <div class="p-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-xl flex-shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            </div>
+        <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap relative z-10">کاربران فعال (آنلاین)</span>
+        <div class="mx-auto my-4 w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-400/30 relative z-10">
+            <svg class="w-7 h-7 text-emerald-400 rahin-icon-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         </div>
-        <div class="space-y-1.5 relative z-10 min-w-0 flex-1">
-            <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400 transition-all" id="stat-active-users">0</div>
-            <span class="text-[11px] text-emerald-500 dark:text-emerald-400 flex items-center gap-1 font-medium whitespace-nowrap">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                متصل در این لحظه
-            </span>
-        </div>
+        <div class="text-3xl font-black text-emerald-500 dark:text-emerald-400 transition-all relative z-10" id="stat-active-users">0</div>
+        <span class="text-[11px] text-emerald-500 dark:text-emerald-400 flex items-center justify-center gap-1 font-medium whitespace-nowrap relative z-10 mt-2">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            متصل در این لحظه
+        </span>
     </div>
-	<div id="card-cf-requests" class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-orange-400 dark:hover:border-orange-500/50 transition duration-300 relative overflow-hidden group">
-	    <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-orange-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
-	    <div class="flex items-center justify-between relative z-10 mb-2">
-	        <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap">ریکوئست‌های روزانه</span>
-	        <div class="p-2 bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 rounded-xl flex-shrink-0">
-	            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-	        </div>
+	<div id="card-cf-requests" class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md hover:border-purple-400 dark:hover:border-purple-400/50 transition duration-300 relative overflow-hidden group text-center">
+	    <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
+	    <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap relative z-10">ریکوئست‌های روزانه</span>
+	    <div class="mx-auto my-4 w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-purple-400/30 relative z-10">
+	        <svg class="w-7 h-7 text-purple-400 rahin-icon-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
 	    </div>
-	    <div class="space-y-2 relative z-10 min-w-0 flex-1">
-	        <div class="flex items-center gap-1">
-	            <span class="text-2xl font-black text-orange-600 dark:text-orange-400 transition-all" id="stat-cf-requests">0</span>
-	            <span class="text-xs font-bold text-gray-400 mr-1">/ 100k</span>
-	            <button id="cf-warning-btn" onclick="openUsageWarning()" class="hidden flex items-center justify-center w-5 h-5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full font-bold text-xs animate-bounce shadow-sm border border-red-300 dark:border-red-700 mr-2">!</button>
-	        </div>
-	        <div class="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-1.5 mt-1">
-	            <div id="stat-cf-progress" class="bg-orange-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-	        </div>
-	        <span class="text-[11px] text-orange-500 dark:text-orange-400 flex items-center justify-between font-medium whitespace-nowrap mt-1">
-	            <span>Total: <span id="stat-cf-total">0</span></span>
-	            <span dir="ltr">Cloudflare</span>
-	        </span>
+	    <div class="flex items-center justify-center gap-1 relative z-10">
+	        <span class="text-3xl font-black text-purple-400 transition-all" id="stat-cf-requests">0</span>
+	        <span class="text-xs font-bold text-gray-400 mr-1">/ 100k</span>
+	        <button id="cf-warning-btn" onclick="openUsageWarning()" class="hidden flex items-center justify-center w-5 h-5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full font-bold text-xs animate-bounce shadow-sm border border-red-300 dark:border-red-700 mr-2">!</button>
 	    </div>
+	    <div class="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-1.5 mt-3 relative z-10">
+	        <div id="stat-cf-progress" class="bg-gradient-to-r from-cyan-500 to-purple-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+	    </div>
+	    <span class="text-[11px] text-purple-400 flex items-center justify-between font-medium whitespace-nowrap mt-2 relative z-10">
+	        <span>Total: <span id="stat-cf-total">0</span></span>
+	        <span dir="ltr">Cloudflare</span>
+	    </span>
 	</div>
-    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500/50 transition duration-300 relative overflow-hidden group">
-        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
-        <div class="flex items-center justify-between relative z-10 mb-2">
-            <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap">حجم مصرفی (۳۰ روز)</span>
-            <div class="p-2 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-xl flex-shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            </div>
+    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-400/50 transition duration-300 relative overflow-hidden group text-center">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
+        <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap relative z-10">حجم مصرفی (۳۰ روز)</span>
+        <div class="mx-auto my-4 w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-400/30 relative z-10">
+            <svg class="w-7 h-7 text-indigo-400 rahin-icon-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
         </div>
-        <div class="space-y-1.5 relative z-10 min-w-0 flex-1">
-            <div class="text-2xl font-black text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap" id="stat-total-usage">0 GB</div>
-            <span class="text-[11px] text-blue-500 dark:text-blue-400 flex items-center gap-1 font-medium whitespace-nowrap">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
-                مصرف کل کاربران
-            </span>
-        </div>
+        <div class="text-3xl font-black text-indigo-400 transition-all whitespace-nowrap relative z-10" id="stat-total-usage">0 GB</div>
+        <span class="text-[11px] text-indigo-400 flex items-center justify-center gap-1 font-medium whitespace-nowrap relative z-10 mt-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+            مصرف کل کاربران
+        </span>
     </div>
-    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-amber-400 dark:hover:border-amber-500/50 transition duration-300 relative overflow-hidden group">
-        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
-        <div class="flex items-center justify-between relative z-10 mb-2">
-            <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap">پر مصرف‌ترین کاربر</span>
-            <div class="p-2 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl flex-shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            </div>
+    <div class="bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md hover:border-pink-400 dark:hover:border-pink-400/50 transition duration-300 relative overflow-hidden group text-center">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-pink-500/10 rounded-full blur-xl group-hover:scale-150 transition duration-500"></div>
+        <span class="text-sm font-semibold text-gray-500 dark:text-zinc-400 whitespace-nowrap relative z-10">پر مصرف‌ترین کاربر</span>
+        <div class="mx-auto my-4 w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-pink-400/30 relative z-10">
+            <svg class="w-7 h-7 text-pink-400 rahin-icon-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
         </div>
-        <div class="space-y-1.5 relative z-10 min-w-0 flex-1">
-            <div class="text-xl font-black text-amber-600 dark:text-amber-400 transition-all truncate max-w-[150px]" id="stat-top-user">-</div>
-            <span class="text-[11px] text-amber-500 dark:text-amber-400 flex items-center gap-1 font-medium whitespace-nowrap" id="stat-top-user-usage">۰ GB مصرف شده</span>
-        </div>
+        <div class="text-xl font-black text-pink-400 transition-all truncate relative z-10" id="stat-top-user">-</div>
+        <span class="text-[11px] text-pink-400 flex items-center justify-center gap-1 font-medium whitespace-nowrap relative z-10 mt-2" id="stat-top-user-usage">۰ GB مصرف شده</span>
     </div>
 </div>
         <div id="loading-state" class="text-center py-12">
@@ -2506,6 +2521,7 @@ const HTML_TEMPLATES = {
             <p class="text-gray-500 dark:text-gray-400">کاربری وجود ندارد. برای ساخت اولین کاربر روی دکمه «افزودن کاربر جدید» کلیک کنید.</p>
         </div>
     </main>
+    </div>
 <div id="path-warning-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 ease-out">
     <div class="w-full max-w-md bg-white dark:bg-amoled-card border border-red-500/50 rounded-3xl shadow-2xl overflow-hidden p-6 text-center transition-all transform duration-300 opacity-0 scale-95 ease-out">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 mb-4 shadow-inner">
@@ -3451,7 +3467,7 @@ const HTML_TEMPLATES = {
             toggleModal(true);
         }
         const themeToggleBtn = document.getElementById('theme-toggle');
-		if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+		if (localStorage.getItem('color-theme') !== 'light') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -4393,7 +4409,7 @@ async function saveSettings() {
                 window.location.reload();
             }
         }
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = '1.1.0';
 const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
 		async function checkForUpdates(isManual = false) {
             try {
@@ -4409,7 +4425,7 @@ const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
                     document.getElementById('update-toggle').classList.remove('animate-pulse');
                 }
                 if (latestVersion && latestVersion !== CURRENT_VERSION) {
-                    document.getElementById('update-toggle').className = "p-2 rounded-lg bg-red-100 dark:bg-red-900/60 border border-red-500 hover:bg-red-200 dark:hover:bg-red-900/80 transition text-red-700 dark:text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse relative";
+                    document.getElementById('update-toggle').className = "p-2.5 rounded-xl bg-red-500/10 border border-red-400/40 hover:bg-red-500/20 transition text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse relative";
                     const badge = document.getElementById('update-badge');
                     if (badge) badge.remove();
                     if (isManual) {
@@ -4626,7 +4642,7 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: {
                 extend: {
                     fontFamily: { sans: ['Vazirmatn', 'sans-serif'] },
-                    colors: { amoled: { bg: '#000000', card: '#080b0f', input: '#0d1117', border: '#1c2330' } }
+                    colors: { amoled: { bg: '#050b1a', card: '#101a30', input: '#0b1526', border: '#22314f' } }
                 }
             }
         }
