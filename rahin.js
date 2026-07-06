@@ -4711,13 +4711,7 @@ const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
                 // neither GitHub's CDN nor any intermediate/browser cache can ever
                 // return a stale copy of rahin.js when detecting updates.
                 const cacheBustedUrl = 'https://raw.githubusercontent.com/rahinvpn445-web/RAHIN-PANEL/main/rahin.js?cb=' + Date.now() + '-' + Math.random().toString(36).slice(2);
-                const res = await fetch(cacheBustedUrl, {
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        Pragma: 'no-cache'
-                    }
-                });
+                const res = await fetch(cacheBustedUrl, { cache: 'no-store' });
                 if (!res.ok) throw new Error('Network response was not ok');
                 const text = await res.text();
                 const match = text.match(/const\\s+CURRENT_VERSION\\s*=\\s*['"](\\d+\\.\\d+\\.\\d+)['"]/i);
