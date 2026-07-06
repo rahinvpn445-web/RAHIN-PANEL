@@ -2374,7 +2374,7 @@ const HTML_TEMPLATES = {
             <div class="flex flex-row flex-wrap justify-center items-center gap-3 w-full md:w-auto">
                 <h1 class="text-lg font-bold flex items-center gap-2" dir="ltr">
                     RAHIN Panel 
-                    <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">v1.0.0</span>
+                    <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">v1.0.1</span>
                 </h1>
                 <div class="flex items-center gap-3 bg-gray-100 dark:bg-zinc-800/60 px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800/80 shadow-sm flex-shrink-0 w-fit">
                     <a href="https://github.com/rahinvpn445-web/RAHIN-PANEL" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-all transform hover:scale-125 duration-200 flex-shrink-0" title="GitHub">
@@ -2635,20 +2635,6 @@ const HTML_TEMPLATES = {
         </p>
         <button onclick="closeUsageWarning()" class="w-full py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-black rounded-xl text-sm transition duration-300 shadow-lg shadow-orange-500/25">
             متوجه شدم
-        </button>
-    </div>
-</div>
-<div id="free-panel-warning-modal" class="fixed inset-0 z-[85] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 ease-out">
-    <div class="w-full max-w-md bg-white dark:bg-amoled-card border border-rose-500/50 rounded-3xl shadow-2xl overflow-hidden p-6 text-center transition-all transform duration-300 opacity-0 scale-95 ease-out">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-500 mb-4 shadow-inner">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-        </div>
-        <h3 class="font-black text-xl text-gray-900 dark:text-white mb-2">پیام همگانی</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed font-medium">
-            این پنل کاملاً <span class="text-rose-500 font-bold">رایگان</span> است. هرگونه فروش پنل یا کانفیگ‌های آن مصداق کلاه‌برداری و رفتاری دور از انسانیت و شرافت است. لطفاً از این ابزار فقط به صورت شخصی و رایگان استفاده کنید.
-        </p>
-        <button onclick="closeFreePanelWarning()" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-sm transition duration-300 shadow-lg shadow-rose-500/25">
-            تأیید و موافقت
         </button>
     </div>
 </div>
@@ -4214,14 +4200,6 @@ function openUsageWarning() {
     card.classList.remove('opacity-0', 'scale-95');
     card.classList.add('opacity-100', 'scale-100');
 }
-function closeFreePanelWarning() {
-    const modal = document.getElementById('free-panel-warning-modal');
-    const card = modal.querySelector('div');
-    modal.classList.remove('opacity-100', 'pointer-events-auto');
-    modal.classList.add('opacity-0', 'pointer-events-none');
-    card.classList.remove('opacity-100', 'scale-100');
-    card.classList.add('opacity-0', 'scale-95');
-}
 function getVlessLink(username) {
             const user = window.allUsers.find(u => u.username === username);
             if (!user) return '';
@@ -4711,7 +4689,7 @@ window.filterLocations = function() {
                 window.location.reload();
             }
         }
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = '1.0.1';
 const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
 		function compareRahinVersions(a, b) {
             const pa = String(a).split('.').map(function (n) { return parseInt(n, 10) || 0; });
@@ -4923,12 +4901,6 @@ function applySelectedIps() {
     toggleIpSelectorModal(false);
 }
 document.addEventListener('DOMContentLoaded', () => {
-			const freeModal = document.getElementById('free-panel-warning-modal');
-            const freeCard = freeModal.querySelector('div');
-            freeModal.classList.remove('opacity-0', 'pointer-events-none');
-            freeModal.classList.add('opacity-100', 'pointer-events-auto');
-            freeCard.classList.remove('opacity-0', 'scale-95');
-            freeCard.classList.add('opacity-100', 'scale-100');
             if (localStorage.getItem('rahin_path_warned_' + CURRENT_VERSION) !== 'true') {
                 const modal = document.getElementById('path-warning-modal');
                 const card = modal.querySelector('div');
@@ -4981,7 +4953,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (e.target.id === 'bulk-edit-modal') toggleBulkEditModal(false);
                 if (e.target.id === 'path-warning-modal') closePathWarning();
                 if (e.target.id === 'usage-warning-modal') closeUsageWarning();
-                if (e.target.id === 'free-panel-warning-modal') closeFreePanelWarning();
                 if (e.target.id === 'custom-confirm-modal') {
                     const cancelBtn = document.getElementById('custom-confirm-cancel');
                     if (cancelBtn) cancelBtn.click();
