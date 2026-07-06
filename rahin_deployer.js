@@ -463,20 +463,6 @@ function getHtmlContent() {
             Rahin_vpn1@
         </a>
     </div>
-    <div class="flex items-center gap-4 justify-center">
-        <a href="https://rahin-panel.example.workers.dev/" target="_blank" class="flex items-center gap-2 px-4 py-2 border border-amber-700 text-amber-500 bg-amber-900/20 hover:bg-amber-900/40 rounded-full shadow-sm hover:shadow-md transition text-sm font-bold group">
-            <svg class="w-5 h-5 group-hover:scale-110 transition" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-            ساخت رایگان پنل
-        </a>
-        <a href="https://donatonion.ir-netlify.workers.dev" target="_blank" class="flex items-center gap-2 px-4 py-2 border border-red-700 text-red-500 bg-red-900/20 hover:bg-red-900/40 rounded-full shadow-sm hover:shadow-md transition text-sm font-bold group">
-            <svg class="w-5 h-5 group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3 9.24 3 10.91 3.81 12 5.08 13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
-            دونیت
-        </a>
-    </div>
 </div>
 <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 <div id="custom-confirm-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 ease-out">
