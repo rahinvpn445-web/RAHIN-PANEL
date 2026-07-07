@@ -470,22 +470,6 @@ const Router = {
 				return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
 			}
 		}
-		if (url.pathname === "/api/geo-ip") {
-			const ip = url.searchParams.get("ip");
-			if (!ip) {
-				return new Response(JSON.stringify({ error: "ip required" }), { status: 400, headers: { "Content-Type": "application/json; charset=utf-8" } });
-			}
-			try {
-				const cca2 = await GeoIpService.resolveCca2(ip);
-				return new Response(JSON.stringify({ ip, cca2 }), {
-					headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
-				});
-			} catch (e) {
-				return new Response(JSON.stringify({ ip, cca2: null }), {
-					headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
-				});
-			}
-		}
 		if (url.pathname === "/api/settings/bulk") {
 			if (request.method === "GET") {
 				try {
@@ -800,25 +784,21 @@ function getFlagEmoji(countryCode) {
 		return "🌐";
 	}
 }
-const geoIpCache = new Map();
-const GeoIpService = {
-	async resolveCca2(ip) {
-		if (!ip) return null;
-		if (geoIpCache.has(ip)) return geoIpCache.get(ip);
-		let cca2 = null;
-		try {
-			const res = await fetch("https://ipwho.is/" + encodeURIComponent(ip) + "?fields=success,country_code");
-			if (res.ok) {
-				const data = await res.json();
-				if (data && data.success && data.country_code) {
-					cca2 = data.country_code;
-				}
-			}
-		} catch (e) {}
-		geoIpCache.set(ip, cca2);
-		return cca2;
-	},
-};
+async function getIataToCca2Map() {
+	const map = {};
+	try {
+		const response = await fetch("https://speed.cloudflare.com/locations", {
+			headers: { Referer: "https://speed.cloudflare.com/" },
+		});
+		const data = await response.json();
+		if (Array.isArray(data)) {
+			data.forEach((loc) => {
+				if (loc && loc.iata && loc.cca2) map[loc.iata] = loc.cca2;
+			});
+		}
+	} catch (e) {}
+	return map;
+}
 const SubscriptionService = {
 	async generateText(user, host) {
 		let ips = [host];
@@ -865,25 +845,20 @@ const SubscriptionService = {
 				if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter((x) => typeof x === "string" && x.length > 0);
 			}
 		} catch (e) {}
-		const uniqueIps = [...new Set(ips)];
-		const ipToCca2 = {};
-		await Promise.all(
-			uniqueIps.map(async (ip) => {
-				ipToCca2[ip] = await GeoIpService.resolveCca2(ip);
-			})
-		);
+		const iataToCca2 = proxyLocations.length > 0 ? await getIataToCca2Map() : {};
 		let configIndex = 0;
 		ips.forEach((ip) => {
 			ports.forEach((portStr) => {
 				const isTlsPort = ["443", "2053", "2083", "2087", "2096", "8443"].includes(portStr);
 				const tlsVal = isTlsPort ? "tls" : "none";
 				const userFrag = user.frag_len && user.frag_int ? "&fragment=" + user.frag_len + "," + user.frag_int : "";
-				const ipCca2 = ipToCca2[ip];
-				const remark = ipCca2 ? user.username + " " + getFlagEmoji(ipCca2) : user.username;
+				let remark = user.username;
 				let vlessPath = "%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
 				if (proxyLocations.length > 0) {
 					const assignedIata = proxyLocations[configIndex % proxyLocations.length];
 					vlessPath = "%2Floc-" + assignedIata + "_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
+					const assignedCca2 = iataToCca2[assignedIata];
+					if (assignedCca2) remark = user.username + " " + getFlagEmoji(assignedCca2);
 				}
 				configIndex++;
 				links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + ip + ":" + portStr + "?path=" + vlessPath + "&security=" + tlsVal + "&encryption=none&insecure=0&host=" + host + "&fp=" + fp + "&type=ws&allowInsecure=0&sni=" + host + userFrag + "#" + encodeURIComponent(remark));
@@ -4306,19 +4281,7 @@ function openUsageWarning() {
     card.classList.remove('opacity-0', 'scale-95');
     card.classList.add('opacity-100', 'scale-100');
 }
-window._geoIpCache = window._geoIpCache || {};
-async function resolveIpCca2(ip) {
-    if (Object.prototype.hasOwnProperty.call(window._geoIpCache, ip)) return window._geoIpCache[ip];
-    try {
-        const res = await fetch('/api/geo-ip?ip=' + encodeURIComponent(ip));
-        const data = await res.json();
-        window._geoIpCache[ip] = data && data.cca2 ? data.cca2 : null;
-    } catch (e) {
-        window._geoIpCache[ip] = null;
-    }
-    return window._geoIpCache[ip];
-}
-async function getVlessLink(username) {
+function getVlessLink(username) {
             const user = window.allUsers.find(u => u.username === username);
             if (!user) return '';
             const host = window.location.hostname;
@@ -4342,22 +4305,30 @@ async function getVlessLink(username) {
                     if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(x => typeof x === 'string' && x.length > 0);
                 }
             } catch (e) {}
-            const uniqueIps = [...new Set(ips)];
-            const ipToCca2 = {};
-            await Promise.all(uniqueIps.map(async (ip) => {
-                ipToCca2[ip] = await resolveIpCca2(ip);
-            }));
+            let iataToCca2 = {};
+            try {
+                const cachedLocsForLink = localStorage.getItem('cached_locations_list');
+                if (cachedLocsForLink) {
+                    const parsedCachedLocs = JSON.parse(cachedLocsForLink);
+                    if (Array.isArray(parsedCachedLocs)) {
+                        parsedCachedLocs.forEach(loc => {
+                            if (loc && loc.iata && loc.cca2) iataToCca2[loc.iata] = loc.cca2;
+                        });
+                    }
+                }
+            } catch (e) {}
             let configIndex = 0;
             ips.forEach((ip) => {
                 ports.forEach((portStr) => {
                     const isTlsPort = tlsPorts.includes(portStr);
                     const tlsVal = isTlsPort ? 'tls' : 'none';
                     let vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                    const ipCca2 = ipToCca2[ip];
-                    const remark = ipCca2 ? (user.username + ' ' + getFlagEmoji(ipCca2)) : user.username;
+                    let remark = user.username;
                     if (proxyLocations.length > 0) {
                         const assignedIata = proxyLocations[configIndex % proxyLocations.length];
                         vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
+                        const assignedCca2 = iataToCca2[assignedIata];
+                        if (assignedCca2) remark = user.username + ' ' + getFlagEmoji(assignedCca2);
                     }
                     configIndex++;
                     links.push('vle' + 'ss://' + (user.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
@@ -4418,9 +4389,9 @@ async function getVlessLink(username) {
                 alert('خطا در کپی کردن لینک صفحه وضعیت!');
             });
         }
-        async function copyConfig(encodedUsername) {
+        function copyConfig(encodedUsername) {
             const username = decodeURIComponent(encodedUsername);
-            const link = await getVlessLink(username);
+            const link = getVlessLink(username);
             if (!link) return;
             navigator.clipboard.writeText(link).then(() => {
                 alert('✅ کانفیگ VLESS با موفقیت کپی شد!');
@@ -5303,19 +5274,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return '🌐';
             }
         }
-        window._geoIpCache = window._geoIpCache || {};
-        async function resolveIpCca2(ip) {
-            if (Object.prototype.hasOwnProperty.call(window._geoIpCache, ip)) return window._geoIpCache[ip];
+        window.statusIataToCca2 = {};
+        async function loadStatusLocationsMap() {
             try {
-                const res = await fetch('/api/geo-ip?ip=' + encodeURIComponent(ip));
-                const data = await res.json();
-                window._geoIpCache[ip] = data && data.cca2 ? data.cca2 : null;
-            } catch (e) {
-                window._geoIpCache[ip] = null;
-            }
-            return window._geoIpCache[ip];
+                const res = await fetch('/locations');
+                if (!res.ok) return;
+                const locations = await res.json();
+                if (Array.isArray(locations)) {
+                    locations.forEach(loc => {
+                        if (loc && loc.iata && loc.cca2) window.statusIataToCca2[loc.iata] = loc.cca2;
+                    });
+                }
+            } catch (e) {}
         }
-        async function getVlessLink() {
+        loadStatusLocationsMap();
+        function getVlessLink() {
             const u = window.statusUser;
             const host = getHost();
             var ips = [host];
@@ -5334,22 +5307,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(function(x) { return typeof x === 'string' && x.length > 0; });
                 }
             } catch (e) {}
-            var uniqueIps = [...new Set(ips)];
-            var ipToCca2 = {};
-            await Promise.all(uniqueIps.map(async function(ip) {
-                ipToCca2[ip] = await resolveIpCca2(ip);
-            }));
             var configIndex = 0;
             ips.forEach(function(ip, ipIndex) {
                 ports.forEach(function(portStr) {
                     var isTlsPort = ['443', '2053', '2083', '2087', '2096', '8443'].includes(portStr);
                     var tlsVal = isTlsPort ? 'tls' : 'none';
-                    var ipCca2 = ipToCca2[ip];
-                    var remark = ipCca2 ? (u.username + ' ' + getFlagEmoji(ipCca2)) : u.username;
+                    var remark = u.username;
                     var vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
                     if (proxyLocations.length > 0) {
                         var assignedIata = proxyLocations[configIndex % proxyLocations.length];
                         vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
+                        var assignedCca2 = window.statusIataToCca2[assignedIata];
+                        if (assignedCca2) remark = u.username + ' ' + getFlagEmoji(assignedCca2);
                     }
                     configIndex++;
                     links.push('vle' + 'ss://' + (u.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
@@ -5357,9 +5326,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             return links.join('\\n');
         }
-        async function copyVlessConfig() {
-            const link = await getVlessLink();
-            navigator.clipboard.writeText(link).then(() => alert('✅ کانفیگ VLESS با موفقیت کپی شد!'));
+        function copyVlessConfig() {
+            navigator.clipboard.writeText(getVlessLink()).then(() => alert('✅ کانفیگ VLESS با موفقیت کپی شد!'));
         }
         function copyTextSub() {
             const link = window.location.protocol + '//' + getHost() + '/sub/' + encodeURIComponent(window.statusUser.username);
