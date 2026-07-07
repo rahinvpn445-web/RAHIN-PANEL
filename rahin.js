@@ -56,7 +56,7 @@ export default {
 		trackRequest(env, ctx);
 		await DbService.ensureSchema(env.DB);
 		const url = new URL(request.url);
-		if (Router.isWebSocketUpgrade(request) && url.pathname === "/In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh") {
+		if (Router.isWebSocketUpgrade(request) && url.pathname.endsWith("In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh")) {
 			return await Router.handleWebSocket(request, env, ctx);
 		}
 		if (Router.isSubscriptionPath(url.pathname)) {
@@ -162,6 +162,7 @@ const Router = {
 				port: user.port,
 				ips: user.ips,
 				fingerprint: user.fingerprint || "chrome",
+				proxy_locations: user.proxy_locations,
 			});
 			const html = HTML_TEMPLATES.status.replace("/* {{USER_DATA_PLACEHOLDER}} */", `window.statusUser = ${userJson};`);
 			return new Response(html, {
@@ -533,7 +534,7 @@ const Router = {
 						}
 						return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 					} else {
-						const { username: new_username, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, block_porn, block_ads, frag_len, frag_int } = body;
+						const { username: new_username, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, block_porn, block_ads, frag_len, frag_int, proxy_locations } = body;
 						if (new_username && new_username !== username) {
 							const existing = await env.DB.prepare("SELECT id FROM users WHERE username = ?").bind(new_username).first();
 							if (existing) {
@@ -556,8 +557,9 @@ const Router = {
 								GLOBAL_LAST_ACTIVE_WRITE.delete(username);
 							}
 						}
-						await env.DB.prepare("UPDATE users SET username = ?, limit_gb = ?, expiry_days = ?, limit_req = ?, ips = ?, tls = ?, port = ?, fingerprint = ?, max_connections = ?, ip_limit = ?, block_porn = ?, block_ads = ?, frag_len = ?, frag_int = ? WHERE username = ?")
-							.bind(new_username || username, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", username)
+						const finalProxyLocations = Array.isArray(proxy_locations) && proxy_locations.length > 0 ? JSON.stringify(proxy_locations) : null;
+						await env.DB.prepare("UPDATE users SET username = ?, limit_gb = ?, expiry_days = ?, limit_req = ?, ips = ?, tls = ?, port = ?, fingerprint = ?, max_connections = ?, ip_limit = ?, block_porn = ?, block_ads = ?, frag_len = ?, frag_int = ?, proxy_locations = ? WHERE username = ?")
+							.bind(new_username || username, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", finalProxyLocations, username)
 							.run();
 						return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 					}
@@ -618,7 +620,7 @@ const Router = {
 					);
 				}
 				if (request.method === "POST") {
-					const { username, uuid, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int } = await request.json();
+					const { username, uuid, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int, proxy_locations } = await request.json();
 					if (!username) {
 						return new Response(JSON.stringify({ error: "نام کاربری اجباری است" }), { status: 400, headers: { "Content-Type": "application/json" } });
 					}
@@ -633,9 +635,10 @@ const Router = {
 					const finalCreatedAt = created_at || new Date().toISOString();
 					const parsedIsActive = parseInt(is_active);
 					const finalIsActive = !isNaN(parsedIsActive) ? parsedIsActive : 1;
+					const finalProxyLocations = Array.isArray(proxy_locations) && proxy_locations.length > 0 ? JSON.stringify(proxy_locations) : null;
 					try {
-						await env.DB.prepare("INSERT INTO users (username, uuid, limit_gb, expiry_days, limit_req, ips, connection_type, tls, port, fingerprint, max_connections, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-							.bind(username, finalUuid, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, atob("dmxlc3M="), tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, finalUsedGb, finalUsedReq, finalCreatedAt, finalIsActive, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2")
+						await env.DB.prepare("INSERT INTO users (username, uuid, limit_gb, expiry_days, limit_req, ips, connection_type, tls, port, fingerprint, max_connections, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int, proxy_locations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+							.bind(username, finalUuid, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, atob("dmxlc3M="), tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, finalUsedGb, finalUsedReq, finalCreatedAt, finalIsActive, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", finalProxyLocations)
 							.run();
 						return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 					} catch (err) {
@@ -716,6 +719,9 @@ const DbService = {
 		} catch (e) {}
 		try {
 			await db.prepare("ALTER TABLE users ADD COLUMN frag_int TEXT DEFAULT '1-2'").run();
+		} catch (e) {}
+		try {
+			await db.prepare("ALTER TABLE users ADD COLUMN proxy_locations TEXT DEFAULT NULL").run();
 		} catch (e) {}
 		schemaEnsured = true;
 	},
@@ -805,13 +811,27 @@ const SubscriptionService = {
 		}
 		const infoRemark = "📊 remaining | \u200E" + remVol + " | \u200E" + remTime + " | \u200E" + remReq;
 		links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + host + ":80?path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh&security=none&encryption=none&host=" + host + "&fp=" + fp + "&type=ws#" + encodeURIComponent(infoRemark));
+		let proxyLocations = [];
+		try {
+			if (user.proxy_locations) {
+				const parsedLocs = JSON.parse(user.proxy_locations);
+				if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter((x) => typeof x === "string" && x.length > 0);
+			}
+		} catch (e) {}
+		let configIndex = 0;
 		ips.forEach((ip) => {
 			ports.forEach((portStr) => {
 				const isTlsPort = ["443", "2053", "2083", "2087", "2096", "8443"].includes(portStr);
 				const tlsVal = isTlsPort ? "tls" : "none";
 				const userFrag = user.frag_len && user.frag_int ? "&fragment=" + user.frag_len + "," + user.frag_int : "";
 				const remark = "RAHIN_VPN | " + user.username + " | \u200E" + ip + " | \u200E" + portStr;
-				links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + ip + ":" + portStr + "?path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh&security=" + tlsVal + "&encryption=none&insecure=0&host=" + host + "&fp=" + fp + "&type=ws&allowInsecure=0&sni=" + host + userFrag + "#" + encodeURIComponent(remark));
+				let vlessPath = "%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
+				if (proxyLocations.length > 0) {
+					const assignedIata = proxyLocations[configIndex % proxyLocations.length];
+					vlessPath = "%2Floc-" + assignedIata + "_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
+				}
+				configIndex++;
+				links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + ip + ":" + portStr + "?path=" + vlessPath + "&security=" + tlsVal + "&encryption=none&insecure=0&host=" + host + "&fp=" + fp + "&type=ws&allowInsecure=0&sni=" + host + userFrag + "#" + encodeURIComponent(remark));
 			});
 		});
 		const noise = ["# System Update Feed: OK", "# Sync Code: " + Math.random().toString(36).slice(2, 10), "# Version: 2.10.1", "# Description: Secure Node Configurations", ""].join("\n");
@@ -1083,7 +1103,16 @@ async function handleVLESS(env, storedData = null, ctx = null, request = null) {
 	let isDnsQuery = false;
 	let chunkBuffer = new Uint8Array(0);
 	let uncountedBytes = 0;
-	const proxyIP = storedData?.proxy_ip || "proxyip.cmliussss.net";
+	let proxyIP = storedData?.proxy_ip || "proxyip.cmliussss.net";
+	try {
+		if (request) {
+			const reqPath = new URL(request.url).pathname;
+			const locMatch = reqPath.match(/\/loc-([A-Za-z0-9]+)_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh/);
+			if (locMatch && locMatch[1]) {
+				proxyIP = locMatch[1].toLowerCase() + ".proxyip.cmliussss.net";
+			}
+		}
+	} catch (e) {}
 	let wsChain = Promise.resolve();
 	let wsStopped = false,
 		wsFailed = false,
@@ -2374,7 +2403,7 @@ const HTML_TEMPLATES = {
             <div class="flex flex-row flex-wrap justify-center items-center gap-3 w-full md:w-auto">
                 <h1 class="text-lg font-bold flex items-center gap-2" dir="ltr">
                     RAHIN Panel 
-                    <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">v1.0.1</span>
+                    <span id="panel-version" class="text-xs px-2 py-0.5 font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">v1.0.5</span>
                 </h1>
                 <div class="flex items-center gap-3 bg-gray-100 dark:bg-zinc-800/60 px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800/80 shadow-sm flex-shrink-0 w-fit">
                     <a href="https://github.com/rahinvpn445-web/RAHIN-PANEL" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-all transform hover:scale-125 duration-200 flex-shrink-0" title="GitHub">
@@ -2780,6 +2809,22 @@ const HTML_TEMPLATES = {
                             </div>
                         </div>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">موقعیت جغرافیایی پروکسی (Cloudflare) - اختیاری</label>
+                        <div id="new-user-location-block">
+                            <input type="text" id="new-user-location-search" oninput="filterLocationsMulti('new-user')" placeholder="جستجوی شهر، کشور یا IATA..." class="w-full px-3 py-2 mb-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-xs text-gray-700 dark:text-zinc-200 transition">
+                            <div id="new-user-location-select" class="max-h-36 overflow-y-auto border border-gray-200 dark:border-zinc-800 rounded-xl p-2 space-y-1 bg-gray-50 dark:bg-zinc-900">
+                                <p class="text-[11px] text-gray-400 text-center py-2">در حال بارگذاری...</p>
+                            </div>
+                        </div>
+                        <div id="edit-user-location-block" style="display:none;">
+                            <input type="text" id="edit-user-location-search" oninput="filterLocationsMulti('edit-user')" placeholder="جستجوی شهر، کشور یا IATA..." class="w-full px-3 py-2 mb-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-xs text-gray-700 dark:text-zinc-200 transition">
+                            <div id="edit-user-location-select" class="max-h-36 overflow-y-auto border border-gray-200 dark:border-zinc-800 rounded-xl p-2 space-y-1 bg-gray-50 dark:bg-zinc-900">
+                                <p class="text-[11px] text-gray-400 text-center py-2">در حال بارگذاری...</p>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-[10px] text-gray-400 dark:text-zinc-500">در صورت انتخاب چند لوکیشن، به ترتیبِ انتخاب و به‌صورت چرخشی (round-robin) بین کانفیگ‌ها تقسیم می‌شوند. در صورت عدم انتخاب، از حالت پیش‌فرض/سراسری استفاده می‌شود.</p>
+                    </div>
 						<div class="grid grid-cols-2 gap-2 mt-3">
     						<div class="flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-2 shadow-sm">
     						    <span class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-zinc-300 whitespace-nowrap pl-1">NSFW Blacker</span>
@@ -2845,21 +2890,7 @@ const HTML_TEMPLATES = {
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
                 <div>
-                    <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-zinc-300">موقعیت جغرافیایی پروکسی (Cloudflare)</label>
-                    <div class="mb-2">
-                        <input type="text" id="location-search" oninput="filterLocations()" placeholder="جستجوی شهر، کشور یا IATA..." class="w-full px-3 py-2 bg-white dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg shadow-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-zinc-200 transition">
-                    </div>
-                    <div class="relative">
-                        <select id="location-select" class="w-full pl-8 pr-3 py-2.5 bg-white dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg shadow-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-zinc-200 cursor-pointer appearance-none">
-                            <option value="">در حال بارگذاری...</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 dark:text-zinc-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                </div>
-				<div class="pt-4 border-t border-gray-100 dark:border-zinc-800">
-                    <label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-zinc-300">آی‌پی اختصاصی سرور مجازی (Custom VPS Proxy IP)</label>
+					<label class="block text-sm font-medium mb-1.5 text-gray-700 dark:text-zinc-300">آی‌پی اختصاصی سرور مجازی (Custom VPS Proxy IP)</label>
                     <div class="relative">
                         <input type="text" id="custom-proxy-input" placeholder="45.130.125.10:2053" dir="ltr" class="w-full px-3 py-2.5 bg-white dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-zinc-100 transition">
                     </div>
@@ -3643,6 +3674,16 @@ const HTML_TEMPLATES = {
                 window.toggleFragInputs(false);
 				const customPortInput = document.getElementById('input-custom-ports');
 				if (customPortInput) customPortInput.value = '';
+                document.getElementById('new-user-location-block').style.display = '';
+                document.getElementById('edit-user-location-block').style.display = 'none';
+                window.newUserSelectedLocations = [];
+                window.editUserSelectedLocations = [];
+                const newLocSearch = document.getElementById('new-user-location-search');
+                if (newLocSearch) newLocSearch.value = '';
+                const cachedLocsReset = localStorage.getItem('cached_locations_list');
+                if (cachedLocsReset) {
+                    try { renderLocationsMultiUI('new-user', JSON.parse(cachedLocsReset)); } catch(e) {}
+                }
             }
         }
 		function toggleUpdateModal(show, version = '') {
@@ -3679,6 +3720,15 @@ const HTML_TEMPLATES = {
             const fragToggle = document.getElementById('input-frag-toggle');
             if (fragToggle) fragToggle.checked = false;
             window.toggleFragInputs(false);
+            document.getElementById('new-user-location-block').style.display = '';
+            document.getElementById('edit-user-location-block').style.display = 'none';
+            window.newUserSelectedLocations = [];
+            const newLocSearchOpen = document.getElementById('new-user-location-search');
+            if (newLocSearchOpen) newLocSearchOpen.value = '';
+            const cachedLocsOpen = localStorage.getItem('cached_locations_list');
+            if (cachedLocsOpen) {
+                try { renderLocationsMultiUI('new-user', JSON.parse(cachedLocsOpen)); } catch(e) {}
+            }
             toggleModal(true);
         }
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -4151,13 +4201,14 @@ const HTML_TEMPLATES = {
             const tls = checkedPorts.some(p => tlsPorts.includes(p)) ? 'on' : 'off';
             const ips = document.getElementById('input-ips').value;
             const fingerprint = document.getElementById('fingerprint-select').value;
+            const proxy_locations = isEditMode ? window.editUserSelectedLocations : window.newUserSelectedLocations;
             const url = isEditMode ? '/api/users/' + encodeURIComponent(editingUsername) : '/api/users';
             const method = isEditMode ? 'PUT' : 'POST';
             try {
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, limit_gb: limit, expiry_days: expiry, limit_req: reqLimit, tls, port, ips, fingerprint, ip_limit: ipLimit, block_porn: block_porn, block_ads: block_ads, frag_len: frag_len, frag_int: frag_int })
+                    body: JSON.stringify({ username, limit_gb: limit, expiry_days: expiry, limit_req: reqLimit, tls, port, ips, fingerprint, ip_limit: ipLimit, block_porn: block_porn, block_ads: block_ads, frag_len: frag_len, frag_int: frag_int, proxy_locations: proxy_locations })
                 });
                 if (response.ok) {
                     toggleModal(false);
@@ -4217,12 +4268,26 @@ function getVlessLink(username) {
             const m2 = "@Rahin_vpn1";
             links.push('vle' + 'ss://' + (user.uuid || '') + '@0.0.0.0:1?encryption=none&security=none&type=ws&host=' + host + '&path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh#' + encodeURIComponent(m1));
             links.push('vle' + 'ss://' + (user.uuid || '') + '@0.0.0.0:1?encryption=none&security=none&type=ws&host=' + host + '&path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh#' + encodeURIComponent(m2));
+            let proxyLocations = [];
+            try {
+                if (user.proxy_locations) {
+                    const parsedLocs = JSON.parse(user.proxy_locations);
+                    if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(x => typeof x === 'string' && x.length > 0);
+                }
+            } catch (e) {}
+            let configIndex = 0;
             ips.forEach((ip) => {
                 ports.forEach((portStr) => {
                     const isTlsPort = tlsPorts.includes(portStr);
                     const tlsVal = isTlsPort ? 'tls' : 'none';
                     const remark = "RAHIN_VPN | " + user.username + ' | \u200E' + ip + ' | \u200E' + portStr;
-                    links.push('vle' + 'ss://' + (user.uuid || '') + '@' + ip + ':' + portStr + '?path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
+                    let vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
+                    if (proxyLocations.length > 0) {
+                        const assignedIata = proxyLocations[configIndex % proxyLocations.length];
+                        vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
+                    }
+                    configIndex++;
+                    links.push('vle' + 'ss://' + (user.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
                 });
             });
             return links.join('\\n');
@@ -4323,6 +4388,23 @@ function editUser(encodedUsername) {
     document.getElementById('input-frag-int').value = hasFrag ? user.frag_int : '1-2';
     window.toggleFragInputs(hasFrag);
 
+    document.getElementById('new-user-location-block').style.display = 'none';
+    document.getElementById('edit-user-location-block').style.display = '';
+    let existingLocations = [];
+    try {
+        if (user.proxy_locations) {
+            const parsedExisting = JSON.parse(user.proxy_locations);
+            if (Array.isArray(parsedExisting)) existingLocations = parsedExisting.filter(x => typeof x === 'string' && x.length > 0);
+        }
+    } catch (e) {}
+    window.editUserSelectedLocations = existingLocations;
+    const editLocSearch = document.getElementById('edit-user-location-search');
+    if (editLocSearch) editLocSearch.value = '';
+    const cachedLocsEdit = localStorage.getItem('cached_locations_list');
+    if (cachedLocsEdit) {
+        try { renderLocationsMultiUI('edit-user', JSON.parse(cachedLocsEdit)); } catch(e) {}
+    }
+
     const userPorts = String(user.port || '').split(',').map(p => p.trim());
     const predefinedPorts = [...tlsPorts, ...nonTlsPorts];
     const customPorts = userPorts.filter(p => !predefinedPorts.includes(p) && p !== '');
@@ -4362,124 +4444,106 @@ function editUser(encodedUsername) {
                 return '🌐';
             }
         }
-        function renderLocationsUI(locations, activeIata) {
-            const select = document.getElementById('location-select');
-            locations.sort((a, b) => (a.cca2 || '').localeCompare(b.cca2 || ''));
-            let html = '<option value="">🌐 پیش‌فرض (لوکیشن خودکار)</option>';
+        window.newUserSelectedLocations = [];
+        window.editUserSelectedLocations = [];
+        window.toggleLocationChoice = function(prefix, iata, checked) {
+            const arr = prefix === 'edit-user' ? window.editUserSelectedLocations : window.newUserSelectedLocations;
+            const idx = arr.indexOf(iata);
+            if (checked) {
+                if (idx === -1) arr.push(iata);
+            } else {
+                if (idx !== -1) arr.splice(idx, 1);
+            }
+        };
+        function renderLocationsMultiUI(prefix, locations) {
+            const container = document.getElementById(prefix + '-location-select');
+            if (!container) return;
+            const selectedArr = prefix === 'edit-user' ? window.editUserSelectedLocations : window.newUserSelectedLocations;
+            locations = locations.slice().sort((a, b) => (a.cca2 || '').localeCompare(b.cca2 || ''));
+            let html = '';
             locations.forEach(loc => {
                 if (loc.iata && loc.city) {
                     const flag = getFlagEmoji(loc.cca2);
-                    const isSelected = loc.iata.toUpperCase() === activeIata.toUpperCase() ? 'selected' : '';
-                    html += '<option value="' + loc.iata + '" ' + isSelected + '>' + flag + ' ' + loc.city + ' (' + loc.iata + ')</option>';
+                    const isChecked = selectedArr.includes(loc.iata) ? 'checked' : '';
+                    html += '<label class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer text-xs text-gray-700 dark:text-zinc-200">' +
+                        '<input type="checkbox" value="' + loc.iata + '" ' + isChecked + ' onchange="toggleLocationChoice(\\'' + prefix + '\\', \\'' + loc.iata + '\\', this.checked)">' +
+                        '<span>' + flag + ' ' + loc.city + ' (' + loc.iata + ')</span></label>';
                 }
             });
-            select.innerHTML = html;
+            container.innerHTML = html || '<p class="text-[11px] text-gray-400 text-center py-2">موردی یافت نشد</p>';
         }
-async function loadLocations() {
-    const select = document.getElementById('location-select');
-    const cachedLocations = localStorage.getItem('cached_locations_list');
-    const cachedActiveIata = localStorage.getItem('cached_active_iata') || '';
-    let hasCachedLocs = false;
-    if (cachedLocations) {
-        try {
-            const parsedLocs = JSON.parse(cachedLocations);
-            if (Array.isArray(parsedLocs) && parsedLocs.length > 0) {
-                renderLocationsUI(parsedLocs, cachedActiveIata);
-                hasCachedLocs = true;
+        async function loadAllLocationLists() {
+            const cachedLocations = localStorage.getItem('cached_locations_list');
+            if (cachedLocations) {
+                try {
+                    const parsedLocs = JSON.parse(cachedLocations);
+                    if (Array.isArray(parsedLocs) && parsedLocs.length > 0) {
+                        renderLocationsMultiUI('new-user', parsedLocs);
+                        renderLocationsMultiUI('edit-user', parsedLocs);
+                    }
+                } catch(e) {}
             }
-        } catch(e) {}
-    }
-    try {
-        const statusRes = await fetch('/api/proxy-ip');
-        let activeIata = '';
-        if (statusRes.ok) {
-            const statusData = await statusRes.json();
-            activeIata = statusData.iata || '';
-            localStorage.setItem('cached_active_iata', activeIata);
-            const customInput = document.getElementById('custom-proxy-input');
-            if (customInput) {
-                if (!activeIata && statusData.proxy_ip && statusData.proxy_ip !== 'proxyip.cmliussss.net') {
-                    customInput.value = statusData.proxy_ip;
-                } else {
-                    customInput.value = '';
-                }
-            }
-        }
-        const res = await fetch('/locations');
-        if (!res.ok) throw new Error();
-        const locations = await res.json();
-        localStorage.setItem('cached_locations_list', JSON.stringify(locations));
-        renderLocationsUI(locations, activeIata);
-    } catch (err) {
-        if (!hasCachedLocs) {
-            select.innerHTML = '<option value="">⚠️ خطا در دریافت لوکیشن‌ها</option>';
-        }
-    }
-}
-async function saveSettings() {
-    const select = document.getElementById('location-select');
-    const customInput = document.getElementById('custom-proxy-input');
-    const customProxy = customInput ? customInput.value.trim() : '';
-    let iata = select.value;
-    const btn = document.getElementById('save-settings-btn');
-    btn.disabled = true;
-    btn.innerText = 'در حال ذخیره...';
-    try {
-        let resolvedIp = 'proxyip.cmliussss.net';
-        if (customProxy) {
-            resolvedIp = customProxy;
-            iata = '';
-        } else if (iata) {
-            const domain = iata.toLowerCase() + '.proxyip.cmliussss.net';
-            const dnsRes = await fetch('https://cloudflare-dns.com/dns-query?name=' + domain + '&type=A', {
-                headers: { 'accept': 'application/dns-json' }
-            });
-            resolvedIp = domain;
-            if (dnsRes.ok) {
-                const dnsData = await dnsRes.json();
-                if (dnsData.Answer && dnsData.Answer.length > 0) {
-                    const ips = dnsData.Answer.filter(ans => ans.type === 1).map(ans => ans.data);
-                    if (ips.length > 0) {
-                        resolvedIp = ips[Math.floor(Math.random() * ips.length)];
+            try {
+                const customInput = document.getElementById('custom-proxy-input');
+                const statusRes = await fetch('/api/proxy-ip');
+                if (statusRes.ok && customInput) {
+                    const statusData = await statusRes.json();
+                    if (statusData.proxy_ip && statusData.proxy_ip !== 'proxyip.cmliussss.net') {
+                        customInput.value = statusData.proxy_ip;
+                    } else {
+                        customInput.value = '';
                     }
                 }
+                const res = await fetch('/locations');
+                if (!res.ok) throw new Error();
+                const locations = await res.json();
+                localStorage.setItem('cached_locations_list', JSON.stringify(locations));
+                renderLocationsMultiUI('new-user', locations);
+                renderLocationsMultiUI('edit-user', locations);
+            } catch (err) {}
+        }
+        async function saveSettings() {
+            const customInput = document.getElementById('custom-proxy-input');
+            const customProxy = customInput ? customInput.value.trim() : '';
+            const btn = document.getElementById('save-settings-btn');
+            btn.disabled = true;
+            btn.innerText = 'در حال ذخیره...';
+            try {
+                const resolvedIp = customProxy || 'proxyip.cmliussss.net';
+                const response = await fetch('/api/proxy-ip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proxy_ip: resolvedIp, iata: '' })
+                });
+                if (response.ok) {
+                    alert('✅ تنظیمات با موفقیت ذخیره شد.\\n' + (customProxy ? 'آی‌پی اختصاصی سرور: ' + resolvedIp : 'آدرس پروکسی به حالت پیش‌فرض بازگشت.'));
+                    toggleSettingsModal(false);
+                } else {
+                    alert('خطا در ذخیره تنظیمات');
+                }
+            } catch (err) {
+                alert('خطا در برقراری ارتباط با سرور');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ذخیره تنظیمات';
             }
         }
-        const response = await fetch('/api/proxy-ip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ proxy_ip: resolvedIp, iata: iata ? iata.toUpperCase() : '' })
-        });
-        if (response.ok) {
-            alert('✅ تنظیمات با موفقیت ذخیره شد.\\n' + (customProxy ? 'آی‌پی اختصاصی سرور: ' + resolvedIp : (iata ? 'آی‌پی پروکسی کلودفلر: ' + resolvedIp : 'آدرس پروکسی به حالت پیش‌فرض بازگشت.')));
-            toggleSettingsModal(false);
-        } else {
-            alert('خطا در ذخیره تنظیمات');
-        }
-    } catch (err) {
-        alert('خطا در برقراری ارتباط با سرور');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = 'ذخیره تنظیمات';
-    }
-}
-window.filterLocations = function() {
-    const searchTerm = document.getElementById('location-search').value.toLowerCase().trim();
-    const cachedLocations = localStorage.getItem('cached_locations_list');
-    const activeIata = localStorage.getItem('cached_active_iata') || '';
-    
-    if (!cachedLocations) return;
-    
-    try {
-        const allLocations = JSON.parse(cachedLocations);
-        const filteredLocations = allLocations.filter(loc => {
-            if (!loc.iata || !loc.city) return false;
-            const searchString = (loc.iata + ' ' + loc.city + ' ' + (loc.cca2 || '')).toLowerCase();
-            return searchString.includes(searchTerm);
-        });
-        renderLocationsUI(filteredLocations, activeIata);
-    } catch(e) {}
-};
+        window.filterLocationsMulti = function(prefix) {
+            const searchInput = document.getElementById(prefix + '-location-search');
+            if (!searchInput) return;
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const cachedLocations = localStorage.getItem('cached_locations_list');
+            if (!cachedLocations) return;
+            try {
+                const allLocations = JSON.parse(cachedLocations);
+                const filteredLocations = allLocations.filter(loc => {
+                    if (!loc.iata || !loc.city) return false;
+                    const searchString = (loc.iata + ' ' + loc.city + ' ' + (loc.cca2 || '')).toLowerCase();
+                    return searchString.includes(searchTerm);
+                });
+                renderLocationsMultiUI(prefix, filteredLocations);
+            } catch(e) {}
+        };
         async function exportUsersBackup() {
             if (!window.allUsers || window.allUsers.length === 0) {
                 alert('⚠️ کاربری برای پشتیبان‌گیری وجود ندارد!');
@@ -4689,7 +4753,7 @@ window.filterLocations = function() {
                 window.location.reload();
             }
         }
-const CURRENT_VERSION = '1.0.1';
+const CURRENT_VERSION = '1.0.5';
 const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
 		function compareRahinVersions(a, b) {
             const pa = String(a).split('.').map(function (n) { return parseInt(n, 10) || 0; });
@@ -4907,7 +4971,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (versionBadge) versionBadge.innerText = 'v' + CURRENT_VERSION;
             renderPortCheckboxes();
             loadUsers();
-            loadLocations();
+            loadAllLocationLists();
             
             window.usersRefreshIntervalId = null;
             
@@ -5185,12 +5249,26 @@ document.addEventListener('DOMContentLoaded', () => {
             var fp = u.fingerprint || 'chrome';
             const userFrag = (u.frag_len && u.frag_int) ? '&fragment=' + u.frag_len + ',' + u.frag_int : '';
             var links = [];
+            var proxyLocations = [];
+            try {
+                if (u.proxy_locations) {
+                    var parsedLocs = JSON.parse(u.proxy_locations);
+                    if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(function(x) { return typeof x === 'string' && x.length > 0; });
+                }
+            } catch (e) {}
+            var configIndex = 0;
             ips.forEach(function(ip, ipIndex) {
                 ports.forEach(function(portStr) {
                     var isTlsPort = ['443', '2053', '2083', '2087', '2096', '8443'].includes(portStr);
                     var tlsVal = isTlsPort ? 'tls' : 'none';
                     var remark = ips.length > 1 ? ('RAHIN_VPN-' + u.username + '-' + (ipIndex + 1) + '-' + portStr) : ('RAHIN_VPN-' + u.username + '-' + portStr);
-                    links.push('vle' + 'ss://' + (u.uuid || '') + '@' + ip + ':' + portStr + '?path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
+                    var vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
+                    if (proxyLocations.length > 0) {
+                        var assignedIata = proxyLocations[configIndex % proxyLocations.length];
+                        vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
+                    }
+                    configIndex++;
+                    links.push('vle' + 'ss://' + (u.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
                 });
             });
             return links.join('\\n');
