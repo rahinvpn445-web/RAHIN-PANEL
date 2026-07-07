@@ -772,33 +772,6 @@ function getActiveIpCount(activeIpsJson) {
 		return 0;
 	}
 }
-function getFlagEmoji(countryCode) {
-	if (!countryCode) return "🌐";
-	const codePoints = countryCode
-		.toUpperCase()
-		.split("")
-		.map((char) => 127397 + char.charCodeAt(0));
-	try {
-		return String.fromCodePoint(...codePoints);
-	} catch (e) {
-		return "🌐";
-	}
-}
-async function getIataToCca2Map() {
-	const map = {};
-	try {
-		const response = await fetch("https://speed.cloudflare.com/locations", {
-			headers: { Referer: "https://speed.cloudflare.com/" },
-		});
-		const data = await response.json();
-		if (Array.isArray(data)) {
-			data.forEach((loc) => {
-				if (loc && loc.iata && loc.cca2) map[loc.iata] = loc.cca2;
-			});
-		}
-	} catch (e) {}
-	return map;
-}
 const SubscriptionService = {
 	async generateText(user, host) {
 		let ips = [host];
@@ -845,20 +818,17 @@ const SubscriptionService = {
 				if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter((x) => typeof x === "string" && x.length > 0);
 			}
 		} catch (e) {}
-		const iataToCca2 = proxyLocations.length > 0 ? await getIataToCca2Map() : {};
 		let configIndex = 0;
 		ips.forEach((ip) => {
 			ports.forEach((portStr) => {
 				const isTlsPort = ["443", "2053", "2083", "2087", "2096", "8443"].includes(portStr);
 				const tlsVal = isTlsPort ? "tls" : "none";
 				const userFrag = user.frag_len && user.frag_int ? "&fragment=" + user.frag_len + "," + user.frag_int : "";
-				let remark = user.username;
+				const remark = "RAHIN_VPN | " + user.username + " | \u200E" + ip + " | \u200E" + portStr;
 				let vlessPath = "%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
 				if (proxyLocations.length > 0) {
 					const assignedIata = proxyLocations[configIndex % proxyLocations.length];
 					vlessPath = "%2Floc-" + assignedIata + "_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
-					const assignedCca2 = iataToCca2[assignedIata];
-					if (assignedCca2) remark = user.username + " " + getFlagEmoji(assignedCca2);
 				}
 				configIndex++;
 				links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + ip + ":" + portStr + "?path=" + vlessPath + "&security=" + tlsVal + "&encryption=none&insecure=0&host=" + host + "&fp=" + fp + "&type=ws&allowInsecure=0&sni=" + host + userFrag + "#" + encodeURIComponent(remark));
@@ -4305,30 +4275,16 @@ function getVlessLink(username) {
                     if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(x => typeof x === 'string' && x.length > 0);
                 }
             } catch (e) {}
-            let iataToCca2 = {};
-            try {
-                const cachedLocsForLink = localStorage.getItem('cached_locations_list');
-                if (cachedLocsForLink) {
-                    const parsedCachedLocs = JSON.parse(cachedLocsForLink);
-                    if (Array.isArray(parsedCachedLocs)) {
-                        parsedCachedLocs.forEach(loc => {
-                            if (loc && loc.iata && loc.cca2) iataToCca2[loc.iata] = loc.cca2;
-                        });
-                    }
-                }
-            } catch (e) {}
             let configIndex = 0;
             ips.forEach((ip) => {
                 ports.forEach((portStr) => {
                     const isTlsPort = tlsPorts.includes(portStr);
                     const tlsVal = isTlsPort ? 'tls' : 'none';
+                    const remark = "RAHIN_VPN | " + user.username + ' | \u200E' + ip + ' | \u200E' + portStr;
                     let vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                    let remark = user.username;
                     if (proxyLocations.length > 0) {
                         const assignedIata = proxyLocations[configIndex % proxyLocations.length];
                         vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                        const assignedCca2 = iataToCca2[assignedIata];
-                        if (assignedCca2) remark = user.username + ' ' + getFlagEmoji(assignedCca2);
                     }
                     configIndex++;
                     links.push('vle' + 'ss://' + (user.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
@@ -4797,7 +4753,7 @@ function editUser(encodedUsername) {
                 window.location.reload();
             }
         }
-const CURRENT_VERSION = '1.0.7';
+const CURRENT_VERSION = '1.0.5';
 const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
 		function compareRahinVersions(a, b) {
             const pa = String(a).split('.').map(function (n) { return parseInt(n, 10) || 0; });
@@ -5229,6 +5185,22 @@ document.addEventListener('DOMContentLoaded', () => {
             Rahin_vpn1@
         </a>
     </div>
+	
+    <div class="flex items-center gap-4 justify-center">
+        <a href="https://rahin-panel.example.workers.dev/" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-full shadow-sm hover:shadow-md transition text-sm font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 group">
+            <svg class="w-5 h-5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            ساخت رایگان پنل
+        </a>
+
+        <a href="https://donatonion.ir-netlify.workers.dev" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-full shadow-sm hover:shadow-md transition text-sm font-bold text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 group">
+            <svg class="w-5 h-5 text-red-500 dark:text-red-400 group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3 9.24 3 10.91 3.81 12 5.08 13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            دونیت
+        </a>
+    </div>
 </div>
 <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
     <script>
@@ -5265,29 +5237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         function getHost() {
             return window.location.host;
         }
-        function getFlagEmoji(countryCode) {
-            if (!countryCode) return '🌐';
-            const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
-            try {
-                return String.fromCodePoint(...codePoints);
-            } catch (e) {
-                return '🌐';
-            }
-        }
-        window.statusIataToCca2 = {};
-        async function loadStatusLocationsMap() {
-            try {
-                const res = await fetch('/locations');
-                if (!res.ok) return;
-                const locations = await res.json();
-                if (Array.isArray(locations)) {
-                    locations.forEach(loc => {
-                        if (loc && loc.iata && loc.cca2) window.statusIataToCca2[loc.iata] = loc.cca2;
-                    });
-                }
-            } catch (e) {}
-        }
-        loadStatusLocationsMap();
         function getVlessLink() {
             const u = window.statusUser;
             const host = getHost();
@@ -5312,13 +5261,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ports.forEach(function(portStr) {
                     var isTlsPort = ['443', '2053', '2083', '2087', '2096', '8443'].includes(portStr);
                     var tlsVal = isTlsPort ? 'tls' : 'none';
-                    var remark = u.username;
+                    var remark = ips.length > 1 ? ('RAHIN_VPN-' + u.username + '-' + (ipIndex + 1) + '-' + portStr) : ('RAHIN_VPN-' + u.username + '-' + portStr);
                     var vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
                     if (proxyLocations.length > 0) {
                         var assignedIata = proxyLocations[configIndex % proxyLocations.length];
                         vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                        var assignedCca2 = window.statusIataToCca2[assignedIata];
-                        if (assignedCca2) remark = u.username + ' ' + getFlagEmoji(assignedCca2);
                     }
                     configIndex++;
                     links.push('vle' + 'ss://' + (u.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
