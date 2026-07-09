@@ -162,7 +162,6 @@ const Router = {
 				port: user.port,
 				ips: user.ips,
 				fingerprint: user.fingerprint || "chrome",
-				proxy_locations: user.proxy_locations,
 			});
 			const html = HTML_TEMPLATES.status.replace("/* {{USER_DATA_PLACEHOLDER}} */", `window.statusUser = ${userJson};`);
 			return new Response(html, {
@@ -512,6 +511,54 @@ const Router = {
 				);
 			}
 		}
+		if (url.pathname === "/api/test-proxy" && request.method === "POST") {
+			const { proxy } = await request.json();
+			if (!proxy) return new Response(JSON.stringify({ error: "پروکسی وارد نشده است" }), { status: 400, headers: { "Content-Type": "application/json" } });
+			try {
+				let ip = "";
+				if (proxy.includes("t.me/socks") || proxy.includes("tg://socks")) {
+					ip = proxy.match(/server=([^&]+)/)?.[1] || "";
+				} else {
+					let cleanProxy = proxy.replace(/^(socks4|socks5|socks|http|https):\/\//i, "");
+					let remain = cleanProxy;
+					if (remain.includes("@")) remain = remain.substring(remain.lastIndexOf("@") + 1);
+					if (remain.startsWith("[")) {
+						ip = remain.substring(1, remain.indexOf("]"));
+					} else {
+						const lastColon = remain.lastIndexOf(":");
+						if (lastColon !== -1 && remain.indexOf(":") === lastColon) ip = remain.substring(0, lastColon);
+						else ip = remain;
+					}
+				}
+				let country = "UN";
+				if (ip) {
+					try {
+						const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode`);
+						const geoData = await geoRes.json();
+						if (geoData && geoData.countryCode) country = geoData.countryCode;
+					} catch (e) {}
+				}
+				const startTime = Date.now();
+				const payload = new TextEncoder().encode("GET / HTTP/1.1\r\nHost: 1.1.1.1\r\nConnection: close\r\n\r\n");
+				const s = await connectProxy(proxy, "1.1.1.1", 80, payload);
+				const reader = s.readable.getReader();
+				const res = await reader.read();
+				if (res.done || !res.value) {
+					s.close();
+					throw new Error("تایم‌اوت در دریافت دیتا");
+				}
+				s.close();
+				const ping = Date.now() - startTime;
+				return new Response(JSON.stringify({ success: true, ping, country }), { headers: { "Content-Type": "application/json" } });
+			} catch (e) {
+				let msg = e.message;
+				if (msg.includes("Stream was cancelled") || msg.includes("network")) msg = "ارتباط با سرور قطع شد (احتمالاً پروکسی مسدود یا خاموش است)";
+				else if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("تایم‌اوت")) msg = "تایم‌اوت در اتصال (پروکسی در دسترس نیست)";
+				else if (msg.includes("Invalid URL") || msg.includes("Invalid format")) msg = "فرمت وارد شده برای پروکسی اشتباه است";
+				else if (msg === "err") msg = "خطای نامشخص (ارتباط برقرار نشد)";
+				return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { "Content-Type": "application/json" } });
+			}
+		}
 		if (url.pathname.startsWith("/api/users")) {
 			const pathParts = url.pathname.split("/");
 			const isUserAction = pathParts.length > 3;
@@ -534,7 +581,7 @@ const Router = {
 						}
 						return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 					} else {
-						const { username: new_username, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, block_porn, block_ads, frag_len, frag_int, proxy_locations } = body;
+						const { username: new_username, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, block_porn, block_ads, frag_len, frag_int, user_proxy_iata, user_socks5, user_proxy_ip } = body;
 						if (new_username && new_username !== username) {
 							const existing = await env.DB.prepare("SELECT id FROM users WHERE username = ?").bind(new_username).first();
 							if (existing) {
@@ -557,9 +604,8 @@ const Router = {
 								GLOBAL_LAST_ACTIVE_WRITE.delete(username);
 							}
 						}
-						const finalProxyLocations = Array.isArray(proxy_locations) && proxy_locations.length > 0 ? JSON.stringify(proxy_locations) : null;
-						await env.DB.prepare("UPDATE users SET username = ?, limit_gb = ?, expiry_days = ?, limit_req = ?, ips = ?, tls = ?, port = ?, fingerprint = ?, max_connections = ?, ip_limit = ?, block_porn = ?, block_ads = ?, frag_len = ?, frag_int = ?, proxy_locations = ? WHERE username = ?")
-							.bind(new_username || username, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", finalProxyLocations, username)
+						await env.DB.prepare("UPDATE users SET username = ?, limit_gb = ?, expiry_days = ?, limit_req = ?, ips = ?, tls = ?, port = ?, fingerprint = ?, max_connections = ?, ip_limit = ?, block_porn = ?, block_ads = ?, frag_len = ?, frag_int = ?, user_proxy_iata = ?, user_socks5 = ?, user_proxy_ip = ? WHERE username = ?")
+							.bind(new_username || username, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", user_proxy_iata || null, user_socks5 || null, user_proxy_ip || null, username)
 							.run();
 						return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 					}
@@ -620,7 +666,7 @@ const Router = {
 					);
 				}
 				if (request.method === "POST") {
-					const { username, uuid, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int, proxy_locations } = await request.json();
+					const { username, uuid, limit_gb, expiry_days, limit_req, ips, tls, port, fingerprint, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int, user_proxy_iata, user_socks5, user_proxy_ip } = await request.json();
 					if (!username) {
 						return new Response(JSON.stringify({ error: "نام کاربری اجباری است" }), { status: 400, headers: { "Content-Type": "application/json" } });
 					}
@@ -635,10 +681,9 @@ const Router = {
 					const finalCreatedAt = created_at || new Date().toISOString();
 					const parsedIsActive = parseInt(is_active);
 					const finalIsActive = !isNaN(parsedIsActive) ? parsedIsActive : 1;
-					const finalProxyLocations = Array.isArray(proxy_locations) && proxy_locations.length > 0 ? JSON.stringify(proxy_locations) : null;
 					try {
-						await env.DB.prepare("INSERT INTO users (username, uuid, limit_gb, expiry_days, limit_req, ips, connection_type, tls, port, fingerprint, max_connections, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int, proxy_locations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-							.bind(username, finalUuid, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, atob("dmxlc3M="), tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, finalUsedGb, finalUsedReq, finalCreatedAt, finalIsActive, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", finalProxyLocations)
+						await env.DB.prepare("INSERT INTO users (username, uuid, limit_gb, expiry_days, limit_req, ips, connection_type, tls, port, fingerprint, max_connections, ip_limit, used_gb, used_req, created_at, is_active, block_porn, block_ads, frag_len, frag_int, user_proxy_iata, user_socks5, user_proxy_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+							.bind(username, finalUuid, limit_gb ? parseFloat(limit_gb) : null, expiry_days ? parseInt(expiry_days) : null, limit_req ? parseInt(limit_req) : null, ips || null, atob("dmxlc3M="), tls, port, fingerprint || "chrome", ip_limit ? parseInt(ip_limit) : null, ip_limit ? parseInt(ip_limit) : null, finalUsedGb, finalUsedReq, finalCreatedAt, finalIsActive, block_porn ? 1 : 0, block_ads ? 1 : 0, frag_len !== undefined ? frag_len : "20-30", frag_int !== undefined ? frag_int : "1-2", user_proxy_iata || null, user_socks5 || null, user_proxy_ip || null)
 							.run();
 						return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 					} catch (err) {
@@ -721,7 +766,13 @@ const DbService = {
 			await db.prepare("ALTER TABLE users ADD COLUMN frag_int TEXT DEFAULT '1-2'").run();
 		} catch (e) {}
 		try {
-			await db.prepare("ALTER TABLE users ADD COLUMN proxy_locations TEXT DEFAULT NULL").run();
+			await db.prepare("ALTER TABLE users ADD COLUMN user_proxy_iata TEXT DEFAULT NULL").run();
+		} catch (e) {}
+		try {
+			await db.prepare("ALTER TABLE users ADD COLUMN user_socks5 TEXT DEFAULT NULL").run();
+		} catch (e) {}
+		try {
+			await db.prepare("ALTER TABLE users ADD COLUMN user_proxy_ip TEXT DEFAULT NULL").run();
 		} catch (e) {}
 		schemaEnsured = true;
 	},
@@ -811,26 +862,13 @@ const SubscriptionService = {
 		}
 		const infoRemark = "📊 remaining | \u200E" + remVol + " | \u200E" + remTime + " | \u200E" + remReq;
 		links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + host + ":80?path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh&security=none&encryption=none&host=" + host + "&fp=" + fp + "&type=ws#" + encodeURIComponent(infoRemark));
-		let proxyLocations = [];
-		try {
-			if (user.proxy_locations) {
-				const parsedLocs = JSON.parse(user.proxy_locations);
-				if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter((x) => typeof x === "string" && x.length > 0);
-			}
-		} catch (e) {}
-		let configIndex = 0;
 		ips.forEach((ip) => {
 			ports.forEach((portStr) => {
 				const isTlsPort = ["443", "2053", "2083", "2087", "2096", "8443"].includes(portStr);
 				const tlsVal = isTlsPort ? "tls" : "none";
 				const userFrag = user.frag_len && user.frag_int ? "&fragment=" + user.frag_len + "," + user.frag_int : "";
 				const remark = "RAHIN_VPN | " + user.username + " | \u200E" + ip + " | \u200E" + portStr;
-				let vlessPath = "%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
-				if (proxyLocations.length > 0) {
-					const assignedIata = proxyLocations[configIndex % proxyLocations.length];
-					vlessPath = "%2Floc-" + assignedIata + "_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
-				}
-				configIndex++;
+				const vlessPath = "%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh";
 				links.push(atob("dmxlc3M6Ly8=") + user.uuid + "@" + ip + ":" + portStr + "?path=" + vlessPath + "&security=" + tlsVal + "&encryption=none&insecure=0&host=" + host + "&fp=" + fp + "&type=ws&allowInsecure=0&sni=" + host + userFrag + "#" + encodeURIComponent(remark));
 			});
 		});
@@ -1104,15 +1142,6 @@ async function handleVLESS(env, storedData = null, ctx = null, request = null) {
 	let chunkBuffer = new Uint8Array(0);
 	let uncountedBytes = 0;
 	let proxyIP = storedData?.proxy_ip || "proxyip.cmliussss.net";
-	try {
-		if (request) {
-			const reqPath = new URL(request.url).pathname;
-			const locMatch = reqPath.match(/\/loc-([A-Za-z0-9]+)_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh/);
-			if (locMatch && locMatch[1]) {
-				proxyIP = locMatch[1].toLowerCase() + ".proxyip.cmliussss.net";
-			}
-		}
-	} catch (e) {}
 	let wsChain = Promise.resolve();
 	let wsStopped = false,
 		wsFailed = false,
@@ -1314,13 +1343,54 @@ async function handleVLESS(env, storedData = null, ctx = null, request = null) {
 					}
 					const task = (async () => {
 						let s = null;
-						try {
-							s = await connectDirect(addr, port, dataPayload, targetDoh);
-						} catch (err) {
-							if (useFallback && proxyIP) {
-								s = await connectDirect(proxyIP, port, dataPayload, targetDoh);
+						const socks5 = user?.user_socks5 || "";
+						if (socks5) {
+							s = await connectProxy(socks5, addr, port, dataPayload);
+						} else {
+							let activeProxyIP = "";
+							if (user?.user_proxy_iata) {
+								activeProxyIP = user.user_proxy_iata.toLowerCase() + ".proxyip.cmliussss.net";
+							} else if (user?.user_proxy_ip) {
+								activeProxyIP = user.user_proxy_ip;
+							}
+							let fHost = activeProxyIP;
+							let fPort = port;
+							if (activeProxyIP) {
+								if (activeProxyIP.startsWith("[")) {
+									const closeIdx = activeProxyIP.indexOf("]");
+									if (closeIdx !== -1) {
+										fHost = activeProxyIP.substring(1, closeIdx);
+										if (activeProxyIP.length > closeIdx + 1 && activeProxyIP[closeIdx + 1] === ":") {
+											fPort = parseInt(activeProxyIP.substring(closeIdx + 2)) || port;
+										}
+									}
+								} else {
+									const lastColon = activeProxyIP.lastIndexOf(":");
+									if (lastColon !== -1 && activeProxyIP.indexOf(":") === lastColon) {
+										fHost = activeProxyIP.substring(0, lastColon);
+										fPort = parseInt(activeProxyIP.substring(lastColon + 1)) || port;
+									} else {
+										fHost = activeProxyIP;
+									}
+								}
+							}
+							const isCustomProxy = Boolean(activeProxyIP);
+							if (isCustomProxy) {
+								try {
+									s = await connectDirect(fHost, fPort, dataPayload, targetDoh);
+								} catch (err) {
+									s = await connectDirect(addr, port, dataPayload, targetDoh);
+								}
 							} else {
-								throw err;
+								try {
+									s = await connectDirect(addr, port, dataPayload, targetDoh);
+								} catch (err) {
+									if (useFallback && proxyIP) {
+										s = await connectDirect(proxyIP, port, dataPayload, targetDoh);
+									} else {
+										throw err;
+									}
+								}
 							}
 						}
 						remoteConnWrapper.socket = s;
@@ -1987,7 +2057,210 @@ async function connectDirect(address, port, initialData = null, targetDoh = "htt
 		}
 	}
 }
-async function forwardVlessUDP(udpChunk, webSocket, respHeader, onBytes, dnsServer = "8.8.4.4") {
+async function connectProxy(proxyStr, destAddr, destPort, initialData) {
+	let normalized = proxyStr;
+	if (proxyStr.includes("t.me/socks") || proxyStr.includes("tg://socks")) {
+		const server = proxyStr.match(/server=([^&]+)/)?.[1];
+		const port = proxyStr.match(/port=([^&]+)/)?.[1];
+		const user = proxyStr.match(/user=([^&]+)/)?.[1];
+		const pass = proxyStr.match(/pass=([^&]+)/)?.[1];
+		if (server && port) {
+			normalized = user && pass ? `socks5://${user}:${pass}@${server}:${port}` : `socks5://${server}:${port}`;
+		}
+	}
+	const isHttp = normalized.toLowerCase().startsWith("http://") || normalized.toLowerCase().startsWith("https://");
+	let cleanStr = normalized.replace(/^(socks4|socks5|socks|http|https):\/\//i, "");
+	if (isHttp) {
+		return await connectHttp(cleanStr, destAddr, destPort, initialData);
+	}
+	return await connectSocks5(cleanStr, destAddr, destPort, initialData);
+}
+async function connectSocks5(socksStr, destAddr, destPort, initialData) {
+	let user = "",
+		pass = "",
+		host = "",
+		port = 1080;
+	let auth = false;
+	let remain = socksStr;
+	if (remain.includes("@")) {
+		const atIdx = remain.lastIndexOf("@");
+		const authPart = remain.substring(0, atIdx);
+		remain = remain.substring(atIdx + 1);
+		const colonIdx = authPart.indexOf(":");
+		if (colonIdx !== -1) {
+			user = authPart.substring(0, colonIdx);
+			pass = authPart.substring(colonIdx + 1);
+		} else {
+			user = authPart;
+		}
+		auth = true;
+	}
+	if (remain.startsWith("[")) {
+		const closeIdx = remain.indexOf("]");
+		if (closeIdx !== -1) {
+			host = remain.substring(1, closeIdx);
+			if (remain.length > closeIdx + 1 && remain[closeIdx + 1] === ":") {
+				port = parseInt(remain.substring(closeIdx + 2)) || 1080;
+			}
+		}
+	} else {
+		const lastColon = remain.lastIndexOf(":");
+		if (lastColon !== -1 && remain.indexOf(":") === lastColon) {
+			host = remain.substring(0, lastColon);
+			port = parseInt(remain.substring(lastColon + 1)) || 1080;
+		} else {
+			host = remain;
+		}
+	}
+	const socket = connect({ hostname: host, port: port });
+	const reader = socket.readable.getReader();
+	const writer = socket.writable.getWriter();
+	try {
+		if (auth) {
+			await writer.write(new Uint8Array([0x05, 0x02, 0x00, 0x02]));
+		} else {
+			await writer.write(new Uint8Array([0x05, 0x01, 0x00]));
+		}
+		let res = await reader.read();
+		if (res.done || !res.value || res.value[0] !== 0x05) throw new Error("پاسخ نامعتبر از سرور (پروکسی SOCKS5 نیست یا خاموش است)");
+		const method = res.value[1];
+		if (method === 0x02) {
+			const uEnc = new TextEncoder().encode(user);
+			const pEnc = new TextEncoder().encode(pass);
+			const authReq = new Uint8Array(1 + 1 + uEnc.length + 1 + pEnc.length);
+			authReq[0] = 0x01;
+			authReq[1] = uEnc.length;
+			authReq.set(uEnc, 2);
+			authReq[2 + uEnc.length] = pEnc.length;
+			authReq.set(pEnc, 3 + uEnc.length);
+			await writer.write(authReq);
+			let authRes = await reader.read();
+			if (authRes.done || !authRes.value || authRes.value[1] !== 0x00) throw new Error("نام کاربری یا رمز عبور پروکسی اشتباه است");
+		}
+		let addrType = 0x03;
+		let addrBytes;
+		if (isIPv4(destAddr)) {
+			addrType = 0x01;
+			addrBytes = new Uint8Array(destAddr.split(".").map(Number));
+		} else {
+			const enc = new TextEncoder().encode(destAddr);
+			addrBytes = new Uint8Array(1 + enc.length);
+			addrBytes[0] = enc.length;
+			addrBytes.set(enc, 1);
+		}
+		const req = new Uint8Array(4 + addrBytes.length + 2);
+		req[0] = 0x05;
+		req[1] = 0x01;
+		req[2] = 0x00;
+		req[3] = addrType;
+		req.set(addrBytes, 4);
+		const portOffset = 4 + addrBytes.length;
+		req[portOffset] = (destPort >> 8) & 0xff;
+		req[portOffset + 1] = destPort & 0xff;
+		await writer.write(req);
+		let connRes = await reader.read();
+		if (connRes.done || !connRes.value || connRes.value[1] !== 0x00) throw new Error("پروکسی وصل شد اما دسترسی به اینترنت آزاد ندارد");
+		if (initialData && initialData.byteLength > 0) {
+			await writer.write(convertToUint8Array(initialData));
+		}
+		writer.releaseLock();
+		reader.releaseLock();
+		return socket;
+	} catch (e) {
+		try {
+			writer.releaseLock();
+		} catch (err) {}
+		try {
+			reader.releaseLock();
+		} catch (err) {}
+		try {
+			socket.close();
+		} catch (err) {}
+		throw e;
+	}
+}
+async function connectHttp(proxyStr, destAddr, destPort, initialData) {
+	let user = "",
+		pass = "",
+		host = "",
+		port = 80;
+	let auth = false;
+	let remain = proxyStr;
+	if (remain.includes("@")) {
+		const atIdx = remain.lastIndexOf("@");
+		const authPart = remain.substring(0, atIdx);
+		remain = remain.substring(atIdx + 1);
+		const colonIdx = authPart.indexOf(":");
+		if (colonIdx !== -1) {
+			user = authPart.substring(0, colonIdx);
+			pass = authPart.substring(colonIdx + 1);
+		} else {
+			user = authPart;
+		}
+		auth = true;
+	}
+	if (remain.startsWith("[")) {
+		const closeIdx = remain.indexOf("]");
+		if (closeIdx !== -1) {
+			host = remain.substring(1, closeIdx);
+			if (remain.length > closeIdx + 1 && remain[closeIdx + 1] === ":") {
+				port = parseInt(remain.substring(closeIdx + 2)) || 80;
+			}
+		}
+	} else {
+		const lastColon = remain.lastIndexOf(":");
+		if (lastColon !== -1 && remain.indexOf(":") === lastColon) {
+			host = remain.substring(0, lastColon);
+			port = parseInt(remain.substring(lastColon + 1)) || 80;
+		} else {
+			host = remain;
+		}
+	}
+	const socket = connect({ hostname: host, port: port });
+	const reader = socket.readable.getReader();
+	const writer = socket.writable.getWriter();
+	try {
+		const safeDest = destAddr.includes(":") ? `[${destAddr}]` : destAddr;
+		let req = `CONNECT ${safeDest}:${destPort} HTTP/1.1\r\nHost: ${safeDest}:${destPort}\r\n`;
+		if (auth) {
+			const authBase64 = btoa(`${user}:${pass}`);
+			req += `Proxy-Authorization: Basic ${authBase64}\r\n`;
+		}
+		req += "\r\n";
+		await writer.write(new TextEncoder().encode(req));
+		let resStr = "";
+		while (true) {
+			const res = await reader.read();
+			if (res.done || !res.value) throw new Error("proxy_closed");
+			resStr += new TextDecoder().decode(res.value, { stream: true });
+			if (resStr.includes("\r\n\r\n")) {
+				const match = resStr.match(/^HTTP\/\d\.\d\s+(\d+)/);
+				if (match && match[1] === "200") {
+					break;
+				} else {
+					throw new Error("proxy_error_" + (match ? match[1] : "unknown"));
+				}
+			}
+		}
+		if (initialData && initialData.byteLength > 0) {
+			await writer.write(convertToUint8Array(initialData));
+		}
+		writer.releaseLock();
+		reader.releaseLock();
+		return socket;
+	} catch (e) {
+		try {
+			writer.releaseLock();
+		} catch (err) {}
+		try {
+			reader.releaseLock();
+		} catch (err) {}
+		try {
+			socket.close();
+		} catch (err) {}
+		throw e;
+	}
+}
 	const requestData = convertToUint8Array(udpChunk);
 	try {
 		const tcpSocket = connect({ hostname: dnsServer, port: 53 });
@@ -2809,21 +3082,38 @@ const HTML_TEMPLATES = {
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">موقعیت جغرافیایی پروکسی (Cloudflare) - اختیاری</label>
-                        <div id="new-user-location-block">
-                            <input type="text" id="new-user-location-search" oninput="filterLocationsMulti('new-user')" placeholder="جستجوی شهر، کشور یا IATA..." class="w-full px-3 py-2 mb-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-xs text-gray-700 dark:text-zinc-200 transition">
-                            <div id="new-user-location-select" class="max-h-36 overflow-y-auto border border-gray-200 dark:border-zinc-800 rounded-xl p-2 space-y-1 bg-gray-50 dark:bg-zinc-900">
-                                <p class="text-[11px] text-gray-400 text-center py-2">در حال بارگذاری...</p>
+                    <div class="pt-4 border-t border-gray-100 dark:border-zinc-900 space-y-3">
+                        <div id="user-cf-proxy-section" class="transition-opacity duration-300">
+                            <label class="block text-xs font-bold text-gray-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">ثابت کردن کشور پروکسی (Cloudflare) - اختیاری</label>
+                            <input type="text" id="user-location-search" oninput="filterUserLocation()" placeholder="جستجوی شهر، کشور یا IATA..." class="w-full px-3 py-2 mb-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-xs text-gray-700 dark:text-zinc-200 transition">
+                            <div class="relative">
+                                <select id="user-location-select" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-xs font-semibold text-gray-700 dark:text-zinc-300 cursor-pointer appearance-none">
+                                    <option value="">🌐 پیش‌فرض / سراسری</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 dark:text-zinc-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
                             </div>
                         </div>
-                        <div id="edit-user-location-block" style="display:none;">
-                            <input type="text" id="edit-user-location-search" oninput="filterLocationsMulti('edit-user')" placeholder="جستجوی شهر، کشور یا IATA..." class="w-full px-3 py-2 mb-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-xs text-gray-700 dark:text-zinc-200 transition">
-                            <div id="edit-user-location-select" class="max-h-36 overflow-y-auto border border-gray-200 dark:border-zinc-800 rounded-xl p-2 space-y-1 bg-gray-50 dark:bg-zinc-900">
-                                <p class="text-[11px] text-gray-400 text-center py-2">در حال بارگذاری...</p>
+                        <div class="pt-3 border-t border-gray-100 dark:border-zinc-900">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs sm:text-sm font-medium text-gray-700 dark:text-zinc-300 cursor-pointer select-none" onclick="document.getElementById('user-proxy-mode-toggle').click()">ثابت کردن کشور و آی‌پی</label>
+                                <label class="relative inline-flex items-center cursor-pointer select-none flex-shrink-0">
+                                    <input type="checkbox" id="user-proxy-mode-toggle" onchange="toggleUserProxyMode(this.checked)" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div id="user-socks5-container" class="opacity-50 pointer-events-none transition-opacity duration-300">
+                                <input type="text" id="user-socks5-input" placeholder="socks5:// یا http:// یا (user:pass@ip:port)" dir="ltr" disabled class="w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-800 dark:text-zinc-100 placeholder-gray-400/80 transition">
+                                <div class="w-full text-center">
+                                    <span id="test-user-proxy-result" class="inline-block mt-2 text-[11px] font-bold transition-colors break-words leading-relaxed empty:hidden"></span>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between w-full gap-2">
+                                    <button type="button" onclick="testUserSocksProxy()" id="test-user-proxy-btn" class="flex-1 text-center text-[11px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 py-1.5 rounded-lg border border-sky-200 dark:border-sky-900/50 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition font-bold shadow-sm">تست پروکسی</button>
+                                    <button type="button" onclick="openProxySelectorModal()" class="flex-1 text-center text-[11px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-bold shadow-sm">مخزن پروکسی</button>
+                                </div>
                             </div>
                         </div>
-                        <p class="mt-1 text-[10px] text-gray-400 dark:text-zinc-500">در صورت انتخاب چند لوکیشن، به ترتیبِ انتخاب و به‌صورت چرخشی (round-robin) بین کانفیگ‌ها تقسیم می‌شوند. در صورت عدم انتخاب، از حالت پیش‌فرض/سراسری استفاده می‌شود.</p>
                     </div>
 						<div class="grid grid-cols-2 gap-2 mt-3">
     						<div class="flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-2 shadow-sm">
@@ -2876,6 +3166,31 @@ const HTML_TEMPLATES = {
             <div class="pt-4 flex gap-3">
                 <button type="button" onclick="toggleIpSelectorModal(false)" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 font-medium rounded-xl text-xs transition">لغو</button>
                 <button type="button" onclick="applySelectedIps()" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl text-xs transition">دریافت</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="proxy-selector-modal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 ease-out">
+    <div class="w-full max-w-sm bg-white dark:bg-amoled-card border border-gray-200 dark:border-amoled-border rounded-2xl shadow-xl overflow-hidden transition-all transform duration-300 opacity-0 scale-95 ease-out">
+        <div class="px-6 py-4 border-b border-gray-150 dark:border-amoled-border flex justify-between items-center bg-gray-50 dark:bg-zinc-900/50">
+            <h3 class="font-bold text-gray-900 dark:text-zinc-100 text-sm">مخزن پروکسی آیپی ثابت</h3>
+            <button type="button" onclick="toggleProxySelectorModal(false)" class="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div id="proxy-loading-state" class="text-center text-sm text-indigo-500 font-bold hidden"></div>
+            <div id="proxy-selection-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium mb-1.5 text-gray-700 dark:text-zinc-300">کشور را انتخاب کنید</label>
+                    <select id="proxy-country-select" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-zinc-300 cursor-pointer">
+                        <option value="">در حال دریافت کشورها...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="toggleProxySelectorModal(false)" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 font-medium rounded-xl text-xs transition">لغو</button>
+                <button type="button" onclick="fetchAndLoadProxy()" id="proxy-fetch-btn" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl text-xs transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>دریافت پروکسی</button>
             </div>
         </div>
     </div>
@@ -3674,16 +3989,17 @@ const HTML_TEMPLATES = {
                 window.toggleFragInputs(false);
 				const customPortInput = document.getElementById('input-custom-ports');
 				if (customPortInput) customPortInput.value = '';
-                document.getElementById('new-user-location-block').style.display = '';
-                document.getElementById('edit-user-location-block').style.display = 'none';
-                window.newUserSelectedLocations = [];
-                window.editUserSelectedLocations = [];
-                const newLocSearch = document.getElementById('new-user-location-search');
-                if (newLocSearch) newLocSearch.value = '';
-                const cachedLocsReset = localStorage.getItem('cached_locations_list');
-                if (cachedLocsReset) {
-                    try { renderLocationsMultiUI('new-user', JSON.parse(cachedLocsReset)); } catch(e) {}
-                }
+                const locSearchClose = document.getElementById('user-location-search');
+                if (locSearchClose) locSearchClose.value = '';
+                const locSelectClose = document.getElementById('user-location-select');
+                if (locSelectClose) locSelectClose.value = '';
+                const socksInputClose = document.getElementById('user-socks5-input');
+                if (socksInputClose) socksInputClose.value = '';
+                const proxyModeToggleClose = document.getElementById('user-proxy-mode-toggle');
+                if (proxyModeToggleClose) proxyModeToggleClose.checked = false;
+                const proxyResultClose = document.getElementById('test-user-proxy-result');
+                if (proxyResultClose) proxyResultClose.innerText = '';
+                window.toggleUserProxyMode(false);
             }
         }
 		function toggleUpdateModal(show, version = '') {
@@ -3720,15 +4036,18 @@ const HTML_TEMPLATES = {
             const fragToggle = document.getElementById('input-frag-toggle');
             if (fragToggle) fragToggle.checked = false;
             window.toggleFragInputs(false);
-            document.getElementById('new-user-location-block').style.display = '';
-            document.getElementById('edit-user-location-block').style.display = 'none';
-            window.newUserSelectedLocations = [];
-            const newLocSearchOpen = document.getElementById('new-user-location-search');
-            if (newLocSearchOpen) newLocSearchOpen.value = '';
-            const cachedLocsOpen = localStorage.getItem('cached_locations_list');
-            if (cachedLocsOpen) {
-                try { renderLocationsMultiUI('new-user', JSON.parse(cachedLocsOpen)); } catch(e) {}
-            }
+            const locSearch = document.getElementById('user-location-search');
+            if (locSearch) locSearch.value = '';
+            const locSelect = document.getElementById('user-location-select');
+            if (locSelect) locSelect.value = '';
+            const socksInput = document.getElementById('user-socks5-input');
+            if (socksInput) socksInput.value = '';
+            const proxyModeToggle = document.getElementById('user-proxy-mode-toggle');
+            if (proxyModeToggle) proxyModeToggle.checked = false;
+            const proxyResult = document.getElementById('test-user-proxy-result');
+            if (proxyResult) proxyResult.innerText = '';
+            window.toggleUserProxyMode(false);
+            loadUserLocations('');
             toggleModal(true);
         }
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -4201,14 +4520,16 @@ const HTML_TEMPLATES = {
             const tls = checkedPorts.some(p => tlsPorts.includes(p)) ? 'on' : 'off';
             const ips = document.getElementById('input-ips').value;
             const fingerprint = document.getElementById('fingerprint-select').value;
-            const proxy_locations = isEditMode ? window.editUserSelectedLocations : window.newUserSelectedLocations;
+            const userProxyMode = document.getElementById('user-proxy-mode-toggle') ? document.getElementById('user-proxy-mode-toggle').checked : false;
+            const userProxyIata = !userProxyMode ? (document.getElementById('user-location-select') ? document.getElementById('user-location-select').value : null) : null;
+            const userSocks5 = userProxyMode ? (document.getElementById('user-socks5-input') ? document.getElementById('user-socks5-input').value.trim() : null) : null;
             const url = isEditMode ? '/api/users/' + encodeURIComponent(editingUsername) : '/api/users';
             const method = isEditMode ? 'PUT' : 'POST';
             try {
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, limit_gb: limit, expiry_days: expiry, limit_req: reqLimit, tls, port, ips, fingerprint, ip_limit: ipLimit, block_porn: block_porn, block_ads: block_ads, frag_len: frag_len, frag_int: frag_int, proxy_locations: proxy_locations })
+                    body: JSON.stringify({ username, limit_gb: limit, expiry_days: expiry, limit_req: reqLimit, tls, port, ips, fingerprint, ip_limit: ipLimit, block_porn: block_porn, block_ads: block_ads, frag_len: frag_len, frag_int: frag_int, user_proxy_iata: userProxyIata || null, user_socks5: userSocks5 || null, user_proxy_ip: null })
                 });
                 if (response.ok) {
                     toggleModal(false);
@@ -4268,25 +4589,12 @@ function getVlessLink(username) {
             const m2 = "@Rahin_vpn1";
             links.push('vle' + 'ss://' + (user.uuid || '') + '@0.0.0.0:1?encryption=none&security=none&type=ws&host=' + host + '&path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh#' + encodeURIComponent(m1));
             links.push('vle' + 'ss://' + (user.uuid || '') + '@0.0.0.0:1?encryption=none&security=none&type=ws&host=' + host + '&path=%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh#' + encodeURIComponent(m2));
-            let proxyLocations = [];
-            try {
-                if (user.proxy_locations) {
-                    const parsedLocs = JSON.parse(user.proxy_locations);
-                    if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(x => typeof x === 'string' && x.length > 0);
-                }
-            } catch (e) {}
-            let configIndex = 0;
             ips.forEach((ip) => {
                 ports.forEach((portStr) => {
                     const isTlsPort = tlsPorts.includes(portStr);
                     const tlsVal = isTlsPort ? 'tls' : 'none';
                     const remark = "RAHIN_VPN | " + user.username + ' | \u200E' + ip + ' | \u200E' + portStr;
-                    let vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                    if (proxyLocations.length > 0) {
-                        const assignedIata = proxyLocations[configIndex % proxyLocations.length];
-                        vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                    }
-                    configIndex++;
+                    const vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
                     links.push('vle' + 'ss://' + (user.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
                 });
             });
@@ -4388,22 +4696,17 @@ function editUser(encodedUsername) {
     document.getElementById('input-frag-int').value = hasFrag ? user.frag_int : '1-2';
     window.toggleFragInputs(hasFrag);
 
-    document.getElementById('new-user-location-block').style.display = 'none';
-    document.getElementById('edit-user-location-block').style.display = '';
-    let existingLocations = [];
-    try {
-        if (user.proxy_locations) {
-            const parsedExisting = JSON.parse(user.proxy_locations);
-            if (Array.isArray(parsedExisting)) existingLocations = parsedExisting.filter(x => typeof x === 'string' && x.length > 0);
-        }
-    } catch (e) {}
-    window.editUserSelectedLocations = existingLocations;
-    const editLocSearch = document.getElementById('edit-user-location-search');
-    if (editLocSearch) editLocSearch.value = '';
-    const cachedLocsEdit = localStorage.getItem('cached_locations_list');
-    if (cachedLocsEdit) {
-        try { renderLocationsMultiUI('edit-user', JSON.parse(cachedLocsEdit)); } catch(e) {}
-    }
+    const hasSocks5 = Boolean(user.user_socks5);
+    const proxyModeToggle = document.getElementById('user-proxy-mode-toggle');
+    if (proxyModeToggle) proxyModeToggle.checked = hasSocks5;
+    const socksInput = document.getElementById('user-socks5-input');
+    if (socksInput) socksInput.value = user.user_socks5 || '';
+    const proxyResultEdit = document.getElementById('test-user-proxy-result');
+    if (proxyResultEdit) proxyResultEdit.innerText = '';
+    const locSearch = document.getElementById('user-location-search');
+    if (locSearch) locSearch.value = '';
+    loadUserLocations(user.user_proxy_iata || '');
+    window.toggleUserProxyMode(hasSocks5);
 
     const userPorts = String(user.port || '').split(',').map(p => p.trim());
     const predefinedPorts = [...tlsPorts, ...nonTlsPorts];
@@ -4435,54 +4738,7 @@ function editUser(encodedUsername) {
                 }
             }
         }
-        function getFlagEmoji(countryCode) {
-            if (!countryCode) return '🌐';
-            const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
-            try {
-                return String.fromCodePoint(...codePoints);
-            } catch (e) {
-                return '🌐';
-            }
-        }
-        window.newUserSelectedLocations = [];
-        window.editUserSelectedLocations = [];
-        window.toggleLocationChoice = function(prefix, iata, checked) {
-            const arr = prefix === 'edit-user' ? window.editUserSelectedLocations : window.newUserSelectedLocations;
-            const idx = arr.indexOf(iata);
-            if (checked) {
-                if (idx === -1) arr.push(iata);
-            } else {
-                if (idx !== -1) arr.splice(idx, 1);
-            }
-        };
-        function renderLocationsMultiUI(prefix, locations) {
-            const container = document.getElementById(prefix + '-location-select');
-            if (!container) return;
-            const selectedArr = prefix === 'edit-user' ? window.editUserSelectedLocations : window.newUserSelectedLocations;
-            locations = locations.slice().sort((a, b) => (a.cca2 || '').localeCompare(b.cca2 || ''));
-            let html = '';
-            locations.forEach(loc => {
-                if (loc.iata && loc.city) {
-                    const flag = getFlagEmoji(loc.cca2);
-                    const isChecked = selectedArr.includes(loc.iata) ? 'checked' : '';
-                    html += '<label class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer text-xs text-gray-700 dark:text-zinc-200">' +
-                        '<input type="checkbox" value="' + loc.iata + '" ' + isChecked + ' onchange="toggleLocationChoice(\\'' + prefix + '\\', \\'' + loc.iata + '\\', this.checked)">' +
-                        '<span>' + flag + ' ' + loc.city + ' (' + loc.iata + ')</span></label>';
-                }
-            });
-            container.innerHTML = html || '<p class="text-[11px] text-gray-400 text-center py-2">موردی یافت نشد</p>';
-        }
-        async function loadAllLocationLists() {
-            const cachedLocations = localStorage.getItem('cached_locations_list');
-            if (cachedLocations) {
-                try {
-                    const parsedLocs = JSON.parse(cachedLocations);
-                    if (Array.isArray(parsedLocs) && parsedLocs.length > 0) {
-                        renderLocationsMultiUI('new-user', parsedLocs);
-                        renderLocationsMultiUI('edit-user', parsedLocs);
-                    }
-                } catch(e) {}
-            }
+        async function loadGlobalProxySettings() {
             try {
                 const customInput = document.getElementById('custom-proxy-input');
                 const statusRes = await fetch('/api/proxy-ip');
@@ -4494,12 +4750,85 @@ function editUser(encodedUsername) {
                         customInput.value = '';
                     }
                 }
+            } catch (err) {}
+        }
+        function getFlagEmoji(countryCode) {
+            if (!countryCode) return '🌐';
+            const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
+            try {
+                return String.fromCodePoint(...codePoints);
+            } catch (e) {
+                return '🌐';
+            }
+        }
+        window.toggleUserProxyMode = function(isSocksMode) {
+            const cfSection = document.getElementById('user-cf-proxy-section');
+            const socksContainer = document.getElementById('user-socks5-container');
+            const locationSelect = document.getElementById('user-location-select');
+            const locationSearch = document.getElementById('user-location-search');
+            const socksInput = document.getElementById('user-socks5-input');
+            if (isSocksMode) {
+                if (cfSection) cfSection.classList.add('opacity-50', 'pointer-events-none');
+                if (locationSelect) locationSelect.disabled = true;
+                if (locationSearch) locationSearch.disabled = true;
+                if (socksContainer) socksContainer.classList.remove('opacity-50', 'pointer-events-none');
+                if (socksInput) socksInput.disabled = false;
+            } else {
+                if (cfSection) cfSection.classList.remove('opacity-50', 'pointer-events-none');
+                if (locationSelect) locationSelect.disabled = false;
+                if (locationSearch) locationSearch.disabled = false;
+                if (socksContainer) socksContainer.classList.add('opacity-50', 'pointer-events-none');
+                if (socksInput) socksInput.disabled = true;
+            }
+        };
+        function renderUserLocationOptions(locations, selectedIata) {
+            const select = document.getElementById('user-location-select');
+            if (!select) return;
+            const sorted = locations.slice().sort((a, b) => (a.cca2 || '').localeCompare(b.cca2 || ''));
+            let html = '<option value="">🌐 پیش‌فرض / سراسری</option>';
+            sorted.forEach(loc => {
+                if (loc.iata && loc.city) {
+                    const flag = getFlagEmoji(loc.cca2);
+                    const isSelected = (selectedIata && loc.iata.toUpperCase() === selectedIata.toUpperCase()) ? 'selected' : '';
+                    html += '<option value="' + loc.iata + '" ' + isSelected + '>' + flag + ' ' + loc.city + ' (' + loc.iata + ')</option>';
+                }
+            });
+            select.innerHTML = html;
+        }
+        window.filterUserLocation = function() {
+            const searchInput = document.getElementById('user-location-search');
+            if (!searchInput) return;
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const cachedLocations = localStorage.getItem('cached_locations_list');
+            if (!cachedLocations) return;
+            try {
+                const allLocations = JSON.parse(cachedLocations);
+                const currentValue = document.getElementById('user-location-select') ? document.getElementById('user-location-select').value : '';
+                const filteredLocations = allLocations.filter(loc => {
+                    if (!loc.iata || !loc.city) return false;
+                    const searchString = (loc.iata + ' ' + loc.city + ' ' + (loc.cca2 || '')).toLowerCase();
+                    return searchString.includes(searchTerm);
+                });
+                renderUserLocationOptions(filteredLocations, currentValue);
+            } catch(e) {}
+        };
+        async function loadUserLocations(selectedIata) {
+            const targetIata = selectedIata !== undefined ? selectedIata : (document.getElementById('user-location-select') ? document.getElementById('user-location-select').value : '');
+            const cachedLocations = localStorage.getItem('cached_locations_list');
+            if (cachedLocations) {
+                try {
+                    const parsedLocs = JSON.parse(cachedLocations);
+                    if (Array.isArray(parsedLocs) && parsedLocs.length > 0) {
+                        renderUserLocationOptions(parsedLocs, targetIata);
+                    }
+                } catch(e) {}
+            }
+            try {
                 const res = await fetch('/locations');
                 if (!res.ok) throw new Error();
                 const locations = await res.json();
                 localStorage.setItem('cached_locations_list', JSON.stringify(locations));
-                renderLocationsMultiUI('new-user', locations);
-                renderLocationsMultiUI('edit-user', locations);
+                renderUserLocationOptions(locations, targetIata);
             } catch (err) {}
         }
         async function saveSettings() {
@@ -4528,22 +4857,6 @@ function editUser(encodedUsername) {
                 btn.innerText = 'ذخیره تنظیمات';
             }
         }
-        window.filterLocationsMulti = function(prefix) {
-            const searchInput = document.getElementById(prefix + '-location-search');
-            if (!searchInput) return;
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const cachedLocations = localStorage.getItem('cached_locations_list');
-            if (!cachedLocations) return;
-            try {
-                const allLocations = JSON.parse(cachedLocations);
-                const filteredLocations = allLocations.filter(loc => {
-                    if (!loc.iata || !loc.city) return false;
-                    const searchString = (loc.iata + ' ' + loc.city + ' ' + (loc.cca2 || '')).toLowerCase();
-                    return searchString.includes(searchTerm);
-                });
-                renderLocationsMultiUI(prefix, filteredLocations);
-            } catch(e) {}
-        };
         async function exportUsersBackup() {
             if (!window.allUsers || window.allUsers.length === 0) {
                 alert('⚠️ کاربری برای پشتیبان‌گیری وجود ندارد!');
@@ -4753,7 +5066,7 @@ function editUser(encodedUsername) {
                 window.location.reload();
             }
         }
-const CURRENT_VERSION = '1.0.5';
+const CURRENT_VERSION = '1.0.7';
 const UPDATE_FIX = "constsCURRENT_VERSION='d.d.d'";
 		function compareRahinVersions(a, b) {
             const pa = String(a).split('.').map(function (n) { return parseInt(n, 10) || 0; });
@@ -4958,6 +5271,270 @@ function applySelectedIps() {
     document.getElementById('input-ips').value = selectedIps.join('\\n');
     toggleIpSelectorModal(false);
 }
+function toggleProxySelectorModal(show) {
+    const modal = document.getElementById('proxy-selector-modal');
+    const card = modal.querySelector('div');
+    if (show) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.classList.add('opacity-100', 'pointer-events-auto');
+        card.classList.remove('opacity-0', 'scale-95');
+        card.classList.add('opacity-100', 'scale-100');
+    } else {
+        modal.classList.remove('opacity-100', 'pointer-events-auto');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        card.classList.remove('opacity-100', 'scale-100');
+        card.classList.add('opacity-0', 'scale-95');
+    }
+}
+const PROXY_COUNTRY_CODES = [
+    "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR",
+    "AS", "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE",
+    "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ",
+    "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD",
+    "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR",
+    "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM",
+    "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI",
+    "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF",
+    "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS",
+    "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU",
+    "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
+    "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN",
+    "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK",
+    "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME",
+    "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ",
+    "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA",
+    "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU",
+    "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM",
+    "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS",
+    "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI",
+    "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV",
+    "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK",
+    "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ", "UA",
+    "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI",
+    "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"
+];
+async function openProxySelectorModal() {
+    toggleProxySelectorModal(true);
+    const select = document.getElementById('proxy-country-select');
+    const fetchBtn = document.getElementById('proxy-fetch-btn');
+
+    select.innerHTML = '';
+    PROXY_COUNTRY_CODES.forEach(country => {
+        const option = document.createElement('option');
+        option.value = country;
+        const flag = typeof getFlagEmoji === 'function' ? getFlagEmoji(country) : '🌐';
+        option.textContent = flag + ' ' + country;
+        select.appendChild(option);
+    });
+
+    fetchBtn.disabled = false;
+}
+async function fetchAndLoadProxy() {
+    const select = document.getElementById('proxy-country-select');
+    const country = select.value;
+    if (!country) return;
+
+    const loadingState = document.getElementById('proxy-loading-state');
+    const formState = document.getElementById('proxy-selection-form');
+    const fetchBtn = document.getElementById('proxy-fetch-btn');
+
+    loadingState.classList.remove('hidden');
+    loadingState.innerText = 'در حال دریافت لیست پروکسی‌ها...';
+    formState.classList.add('hidden');
+    fetchBtn.disabled = true;
+
+    try {
+        const sources = [
+            { url: 'https://raw.githubusercontent.com/proxifly/free-proxy-list/refs/heads/main/proxies/countries/' + country.toUpperCase() + '/data.txt', prefix: '' },
+            { url: 'https://raw.githubusercontent.com/IR-NETLIFY/zeus/refs/heads/main/proxy/' + country.toUpperCase() + '.txt', prefix: '' },
+
+            { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&country=' + country, prefix: 'socks5://' },
+            { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4&country=' + country, prefix: 'socks4://' },
+            { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&country=' + country, prefix: 'http://' },
+            { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=https&country=' + country, prefix: 'https://' },
+
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks5&country=' + country, prefix: 'socks5://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks4&country=' + country, prefix: 'socks4://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol==http&country=' + country, prefix: 'http://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=https&country=' + country, prefix: 'https://' },
+
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks5&country=' + country + '&format=text', prefix: 'socks5://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks4&country=' + country + '&format=text', prefix: 'socks4://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=http&country=' + country + '&format=text', prefix: 'http://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=https&country=' + country + '&format=text', prefix: 'https://' },
+
+            { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=socks5&country=' + country + '&format=text', prefix: 'socks5://' },
+            { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=socks4&country=' + country + '&format=text', prefix: 'socks4://' },
+            { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=http&country=' + country + '&format=text', prefix: 'http://' },
+            { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=https&country=' + country + '&format=text', prefix: 'https://' }
+        ];
+
+        const responses = await Promise.allSettled(sources.map(src =>
+            fetch(src.url).then(async res => {
+                if (!res.ok) throw new Error();
+                const text = await res.text();
+                return { text: text, prefix: src.prefix };
+            })
+        ));
+
+        let combinedProxies = [];
+
+        for (const res of responses) {
+            if (res.status === 'fulfilled' && res.value && res.value.text) {
+                const rawLines = res.value.text.split('\\n');
+                for (let line of rawLines) {
+                    line = line.trim();
+                    if (line.length > 5) {
+                        if (res.value.prefix && !line.includes('://')) {
+                            combinedProxies.push(res.value.prefix + line);
+                        } else {
+                            combinedProxies.push(line);
+                        }
+                    }
+                }
+            }
+        }
+
+        let lines = [...new Set(combinedProxies.filter(l => l.match(/^(socks4|socks5|socks|http|https):\\/\\//i)))];
+
+        if (lines.length > 0) {
+            for (let i = lines.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [lines[i], lines[j]] = [lines[j], lines[i]];
+            }
+
+            let bestProxy = null;
+            let fallbackProxy = null;
+            const BATCH_SIZE = 5;
+
+            for (let i = 0; i < lines.length; i += BATCH_SIZE) {
+                const batch = lines.slice(i, i + BATCH_SIZE);
+                loadingState.innerText = 'تعداد ' + lines.length + ' پروکسی پیدا شد درحال اسکن\\nاسکن گروه ' + (Math.floor(i / BATCH_SIZE) + 1) + ' (۵ تست برای هر کدام)...';
+
+                const testResults = await Promise.allSettled(batch.map(async (candidate) => {
+                    let successCount = 0;
+                    let totalPing = 0;
+                    let failCount = 0;
+
+                    for (let t = 0; t < 5; t++) {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 3500);
+                        try {
+                            const testRes = await fetch('/api/test-proxy', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ proxy: candidate }),
+                                signal: controller.signal
+                            });
+                            clearTimeout(timeoutId);
+                            const testData = await testRes.json();
+                            if (testRes.ok && testData.success) {
+                                successCount++;
+                                totalPing += testData.ping;
+                            } else {
+                                failCount++;
+                            }
+                        } catch (err) {
+                            clearTimeout(timeoutId);
+                            failCount++;
+                        }
+
+                        if (failCount > 2) break;
+                    }
+
+                    if (successCount > 0) {
+                        return { proxy: candidate, successCount: successCount, avgPing: totalPing / successCount };
+                    }
+                    throw new Error();
+                }));
+
+                const successfulProxies = testResults
+                    .filter(r => r.status === 'fulfilled')
+                    .map(r => r.value)
+                    .sort((a, b) => {
+                        if (b.successCount !== a.successCount) {
+                            return b.successCount - a.successCount;
+                        }
+                        return a.avgPing - b.avgPing;
+                    });
+
+                if (successfulProxies.length > 0) {
+                    const topCandidate = successfulProxies[0];
+                    if (topCandidate.successCount >= 3) {
+                        bestProxy = topCandidate.proxy;
+                        break;
+                    } else if (!fallbackProxy || topCandidate.successCount > fallbackProxy.successCount) {
+                        fallbackProxy = topCandidate;
+                    }
+                }
+            }
+
+            if (!bestProxy && fallbackProxy) {
+                bestProxy = fallbackProxy.proxy;
+            }
+
+            if (bestProxy) {
+                document.getElementById('user-socks5-input').value = bestProxy;
+                document.getElementById('test-user-proxy-result').innerText = '';
+                toggleProxySelectorModal(false);
+                showToast('پروکسی با بهترین امتیاز لود شد.');
+            } else {
+                alert('هیچ پروکسی سالمی (حتی با یک پینگ موفق) یافت نشد.');
+            }
+        } else {
+            alert('پروکسی برای این کشور یافت نشد.');
+        }
+    } catch (e) {
+        alert('خطا در دریافت لیست پروکسی‌ها از سرور.');
+    } finally {
+        loadingState.classList.add('hidden');
+        formState.classList.remove('hidden');
+        fetchBtn.disabled = false;
+    }
+}
+async function testUserSocksProxy() {
+	const btn = document.getElementById('test-user-proxy-btn');
+	const resultSpan = document.getElementById('test-user-proxy-result');
+	const proxyStr = document.getElementById('user-socks5-input').value.trim();
+	if (!proxyStr) {
+		resultSpan.innerText = 'وارد نشده!';
+		resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1';
+		return;
+	}
+	btn.disabled = true;
+	btn.innerText = 'صبر کنید...';
+	resultSpan.innerText = '';
+
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+	try {
+		const res = await fetch('/api/test-proxy', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ proxy: proxyStr }),
+			signal: controller.signal
+		});
+		clearTimeout(timeoutId);
+		const data = await res.json();
+		if (res.ok && data.success) {
+			const flag = typeof getFlagEmoji === 'function' ? getFlagEmoji(data.country) : '🌐';
+			resultSpan.innerText = flag + ' پینگ: ' + data.ping + 'ms';
+			resultSpan.className = 'text-[11px] font-bold text-green-600';
+		} else {
+			resultSpan.innerText = 'خطا: ' + (data.error || 'ناموفق');
+			resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1 break-words';
+		}
+	} catch (e) {
+		clearTimeout(timeoutId);
+		if (e.name === 'AbortError') resultSpan.innerText = 'تایم‌اوت (پروکسی خراب است)';
+		else resultSpan.innerText = 'خطا در ارتباط';
+		resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1 break-words';
+	} finally {
+		btn.disabled = false;
+		btn.innerText = 'تست پروکسی';
+	}
+}
 document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('rahin_path_warned_' + CURRENT_VERSION) !== 'true') {
                 const modal = document.getElementById('path-warning-modal');
@@ -4971,7 +5548,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (versionBadge) versionBadge.innerText = 'v' + CURRENT_VERSION;
             renderPortCheckboxes();
             loadUsers();
-            loadAllLocationLists();
+            loadGlobalProxySettings();
+            loadUserLocations('');
             
             window.usersRefreshIntervalId = null;
             
@@ -5004,6 +5582,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.addEventListener('click', (e) => {
                 if (e.target.id === 'user-modal') toggleModal(false);
                 if (e.target.id === 'ip-selector-modal') toggleIpSelectorModal(false);
+                if (e.target.id === 'proxy-selector-modal') toggleProxySelectorModal(false);
                 if (e.target.id === 'settings-modal') toggleSettingsModal(false);
                 if (e.target.id === 'update-modal') toggleUpdateModal(false);
                 if (e.target.id === 'token-modal') toggleTokenModal(false);
@@ -5249,25 +5828,12 @@ document.addEventListener('DOMContentLoaded', () => {
             var fp = u.fingerprint || 'chrome';
             const userFrag = (u.frag_len && u.frag_int) ? '&fragment=' + u.frag_len + ',' + u.frag_int : '';
             var links = [];
-            var proxyLocations = [];
-            try {
-                if (u.proxy_locations) {
-                    var parsedLocs = JSON.parse(u.proxy_locations);
-                    if (Array.isArray(parsedLocs)) proxyLocations = parsedLocs.filter(function(x) { return typeof x === 'string' && x.length > 0; });
-                }
-            } catch (e) {}
-            var configIndex = 0;
             ips.forEach(function(ip, ipIndex) {
                 ports.forEach(function(portStr) {
                     var isTlsPort = ['443', '2053', '2083', '2087', '2096', '8443'].includes(portStr);
                     var tlsVal = isTlsPort ? 'tls' : 'none';
                     var remark = ips.length > 1 ? ('RAHIN_VPN-' + u.username + '-' + (ipIndex + 1) + '-' + portStr) : ('RAHIN_VPN-' + u.username + '-' + portStr);
                     var vlessPath = '%2FIn_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                    if (proxyLocations.length > 0) {
-                        var assignedIata = proxyLocations[configIndex % proxyLocations.length];
-                        vlessPath = '%2Floc-' + assignedIata + '_In_Panel_Rayeghan_Ast_Va_Gheyre_Ghabele_Foroosh';
-                    }
-                    configIndex++;
                     links.push('vle' + 'ss://' + (u.uuid || '') + '@' + ip + ':' + portStr + '?path=' + vlessPath + '&security=' + tlsVal + '&encryption=none&insecure=0&host=' + host + '&fp=' + fp + '&type=ws&allowInsecure=0&sni=' + host + userFrag + '#' + encodeURIComponent(remark));
                 });
             });
