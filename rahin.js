@@ -516,6 +516,7 @@ const Router = {
 			if (!proxy) return new Response(JSON.stringify({ error: "پروکسی وارد نشده است" }), { status: 400, headers: { "Content-Type": "application/json" } });
 			try {
 				let ip = "";
+				let workingProxy = proxy;
 				if (proxy.includes("t.me/socks") || proxy.includes("tg://socks")) {
 					ip = proxy.match(/server=([^&]+)/)?.[1] || "";
 				} else {
@@ -3109,8 +3110,8 @@ const HTML_TEMPLATES = {
                                     <span id="test-user-proxy-result" class="inline-block mt-2 text-[11px] font-bold transition-colors break-words leading-relaxed empty:hidden"></span>
                                 </div>
                                 <div class="mt-2 flex items-center justify-between w-full gap-2">
-                                    <button type="button" onclick="testUserSocksProxy()" id="test-user-proxy-btn" class="flex-1 text-center text-[11px] bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 py-1.5 rounded-lg border border-sky-200 dark:border-sky-900/50 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition font-bold shadow-sm">تست پروکسی</button>
-                                    <button type="button" onclick="openProxySelectorModal()" class="flex-1 text-center text-[11px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition font-bold shadow-sm">مخزن پروکسی</button>
+                                    <button type="button" onclick="testUserSocksProxy()" id="test-user-proxy-btn" class="flex-1 text-center text-[11px] bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 py-1.5 rounded-lg border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition font-bold shadow-sm">تست پروکسی</button>
+                                    <button type="button" onclick="openProxySelectorModal()" class="flex-1 text-center text-[11px] bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 py-1.5 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition font-bold shadow-sm">مخزن پروکسی</button>
                                 </div>
                             </div>
                         </div>
@@ -3179,18 +3180,18 @@ const HTML_TEMPLATES = {
             </button>
         </div>
         <div class="p-6 space-y-4">
-            <div id="proxy-loading-state" class="text-center text-sm text-indigo-500 font-bold hidden"></div>
+            <div id="proxy-loading-state" class="text-center text-sm text-purple-500 font-bold hidden"></div>
             <div id="proxy-selection-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-medium mb-1.5 text-gray-700 dark:text-zinc-300">کشور را انتخاب کنید</label>
-                    <select id="proxy-country-select" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 dark:text-zinc-300 cursor-pointer">
+                    <select id="proxy-country-select" class="w-full px-3 py-2.5 bg-gray-50 dark:bg-amoled-input border border-gray-300 dark:border-amoled-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-700 dark:text-zinc-300 cursor-pointer">
                         <option value="">در حال دریافت کشورها...</option>
                     </select>
                 </div>
             </div>
             <div class="pt-4 flex gap-3">
                 <button type="button" onclick="toggleProxySelectorModal(false)" class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 font-medium rounded-xl text-xs transition">لغو</button>
-                <button type="button" onclick="fetchAndLoadProxy()" id="proxy-fetch-btn" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl text-xs transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>دریافت پروکسی</button>
+                <button type="button" onclick="fetchAndLoadProxy()" id="proxy-fetch-btn" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl text-xs transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>دریافت پروکسی</button>
             </div>
         </div>
     </div>
@@ -3997,8 +3998,6 @@ const HTML_TEMPLATES = {
                 if (socksInputClose) socksInputClose.value = '';
                 const proxyModeToggleClose = document.getElementById('user-proxy-mode-toggle');
                 if (proxyModeToggleClose) proxyModeToggleClose.checked = false;
-                const proxyResultClose = document.getElementById('test-user-proxy-result');
-                if (proxyResultClose) proxyResultClose.innerText = '';
                 window.toggleUserProxyMode(false);
             }
         }
@@ -4044,8 +4043,6 @@ const HTML_TEMPLATES = {
             if (socksInput) socksInput.value = '';
             const proxyModeToggle = document.getElementById('user-proxy-mode-toggle');
             if (proxyModeToggle) proxyModeToggle.checked = false;
-            const proxyResult = document.getElementById('test-user-proxy-result');
-            if (proxyResult) proxyResult.innerText = '';
             window.toggleUserProxyMode(false);
             loadUserLocations('');
             toggleModal(true);
@@ -4701,8 +4698,6 @@ function editUser(encodedUsername) {
     if (proxyModeToggle) proxyModeToggle.checked = hasSocks5;
     const socksInput = document.getElementById('user-socks5-input');
     if (socksInput) socksInput.value = user.user_socks5 || '';
-    const proxyResultEdit = document.getElementById('test-user-proxy-result');
-    if (proxyResultEdit) proxyResultEdit.innerText = '';
     const locSearch = document.getElementById('user-location-search');
     if (locSearch) locSearch.value = '';
     loadUserLocations(user.user_proxy_iata || '');
@@ -5221,55 +5216,48 @@ function populateIpSelect() {
         select.appendChild(option);
     });
 }
-function toggleIpSelectorModal(show) {
-    const modal = document.getElementById('ip-selector-modal');
-    const card = modal.querySelector('div');
-    if (show) {
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        modal.classList.add('opacity-100', 'pointer-events-auto');
-        card.classList.remove('opacity-0', 'scale-95');
-        card.classList.add('opacity-100', 'scale-100');
-    } else {
-        modal.classList.remove('opacity-100', 'pointer-events-auto');
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        card.classList.remove('opacity-100', 'scale-100');
-        card.classList.add('opacity-0', 'scale-95');
+async function testUserSocksProxy() {
+    const btn = document.getElementById('test-user-proxy-btn');
+    const resultSpan = document.getElementById('test-user-proxy-result');
+    const proxyStr = document.getElementById('user-socks5-input').value.trim();
+    if (!proxyStr) {
+        resultSpan.innerText = 'وارد نشده!';
+        resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1';
+        return;
     }
-}
-async function openIpSelectorModal() {
-    toggleIpSelectorModal(true);
-    document.getElementById('ip-loading-state').classList.remove('hidden');
-    document.getElementById('ip-selection-form').classList.add('hidden');
-    await fetchIpsList();
-    document.getElementById('ip-loading-state').classList.add('hidden');
-    document.getElementById('ip-selection-form').classList.remove('hidden');
-}
-function applySelectedIps() {
-    const operator = document.getElementById('ip-operator-select').value;
-    let count = parseInt(document.getElementById('ip-count-input').value, 10);
-    if (isNaN(count) || count < 1) count = 10;
-    let availableIps = [];
-    if (operator === 'all') {
-        Object.values(cachedIpsData).forEach(ips => {
-            availableIps = availableIps.concat(ips);
+    btn.disabled = true;
+    btn.innerText = 'صبر کنید...';
+    resultSpan.innerText = '';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+        const res = await fetch('/api/test-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy: proxyStr }),
+            signal: controller.signal
         });
-    } else {
-        availableIps = cachedIpsData[operator] || [];
-    }
-    availableIps = [...new Set(availableIps)];
-    let selectedIps = [];
-    if (count >= availableIps.length) {
-        selectedIps = availableIps;
-    } else {
-        const shuffled = availableIps.slice();
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        clearTimeout(timeoutId);
+        const data = await res.json();
+        if (res.ok && data.success) {
+            const flag = typeof getFlagEmoji === 'function' ? getFlagEmoji(data.country) : '🌐';
+            resultSpan.innerText = flag + ' پینگ: ' + data.ping + 'ms';
+            resultSpan.className = 'text-[11px] font-bold text-green-600';
+        } else {
+            resultSpan.innerText = 'خطا: ' + (data.error || 'ناموفق');
+            resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1 break-words';
         }
-        selectedIps = shuffled.slice(0, count);
+    } catch (e) {
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') resultSpan.innerText = 'تایم‌اوت (پروکسی خراب است)';
+        else resultSpan.innerText = 'خطا در ارتباط';
+        resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1 break-words';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'تست پروکسی';
     }
-    document.getElementById('input-ips').value = selectedIps.join('\\n');
-    toggleIpSelectorModal(false);
 }
 function toggleProxySelectorModal(show) {
     const modal = document.getElementById('proxy-selector-modal');
@@ -5286,40 +5274,41 @@ function toggleProxySelectorModal(show) {
         card.classList.add('opacity-0', 'scale-95');
     }
 }
-const PROXY_COUNTRY_CODES = [
-    "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR",
-    "AS", "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE",
-    "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ",
-    "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD",
-    "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR",
-    "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM",
-    "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI",
-    "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF",
-    "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS",
-    "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU",
-    "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
-    "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN",
-    "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK",
-    "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME",
-    "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ",
-    "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA",
-    "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU",
-    "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM",
-    "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS",
-    "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI",
-    "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV",
-    "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK",
-    "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ", "UA",
-    "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI",
-    "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"
-];
 async function openProxySelectorModal() {
     toggleProxySelectorModal(true);
     const select = document.getElementById('proxy-country-select');
     const fetchBtn = document.getElementById('proxy-fetch-btn');
 
+    const countriesList = [
+        "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR",
+        "AS", "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE",
+        "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ",
+        "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD",
+        "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR",
+        "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM",
+        "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI",
+        "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF",
+        "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS",
+        "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU",
+        "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
+        "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN",
+        "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK",
+        "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME",
+        "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ",
+        "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA",
+        "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU",
+        "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM",
+        "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS",
+        "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI",
+        "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV",
+        "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK",
+        "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ", "UA",
+        "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI",
+        "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"
+    ];
+
     select.innerHTML = '';
-    PROXY_COUNTRY_CODES.forEach(country => {
+    countriesList.forEach(country => {
         const option = document.createElement('option');
         option.value = country;
         const flag = typeof getFlagEmoji === 'function' ? getFlagEmoji(country) : '🌐';
@@ -5347,22 +5336,18 @@ async function fetchAndLoadProxy() {
         const sources = [
             { url: 'https://raw.githubusercontent.com/proxifly/free-proxy-list/refs/heads/main/proxies/countries/' + country.toUpperCase() + '/data.txt', prefix: '' },
             { url: 'https://raw.githubusercontent.com/IR-NETLIFY/zeus/refs/heads/main/proxy/' + country.toUpperCase() + '.txt', prefix: '' },
-
             { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&country=' + country, prefix: 'socks5://' },
             { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks4&country=' + country, prefix: 'socks4://' },
             { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&country=' + country, prefix: 'http://' },
             { url: 'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=https&country=' + country, prefix: 'https://' },
-
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks5&country=' + country, prefix: 'socks5://' },
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks4&country=' + country, prefix: 'socks4://' },
-            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol==http&country=' + country, prefix: 'http://' },
+            { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=http&country=' + country, prefix: 'http://' },
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=https&country=' + country, prefix: 'https://' },
-
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks5&country=' + country + '&format=text', prefix: 'socks5://' },
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=socks4&country=' + country + '&format=text', prefix: 'socks4://' },
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=http&country=' + country + '&format=text', prefix: 'http://' },
             { url: 'https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=https&country=' + country + '&format=text', prefix: 'https://' },
-
             { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=socks5&country=' + country + '&format=text', prefix: 'socks5://' },
             { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=socks4&country=' + country + '&format=text', prefix: 'socks4://' },
             { url: 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=getproxies&protocol=http&country=' + country + '&format=text', prefix: 'http://' },
@@ -5381,7 +5366,7 @@ async function fetchAndLoadProxy() {
 
         for (const res of responses) {
             if (res.status === 'fulfilled' && res.value && res.value.text) {
-                const rawLines = res.value.text.split('\\n');
+                const rawLines = res.value.text.split('\n');
                 for (let line of rawLines) {
                     line = line.trim();
                     if (line.length > 5) {
@@ -5395,7 +5380,7 @@ async function fetchAndLoadProxy() {
             }
         }
 
-        let lines = [...new Set(combinedProxies.filter(l => l.match(/^(socks4|socks5|socks|http|https):\\/\\//i)))];
+        let lines = [...new Set(combinedProxies.filter(l => l.match(/^(socks4|socks5|socks|http|https):\/\//i)))];
 
         if (lines.length > 0) {
             for (let i = lines.length - 1; i > 0; i--) {
@@ -5409,7 +5394,7 @@ async function fetchAndLoadProxy() {
 
             for (let i = 0; i < lines.length; i += BATCH_SIZE) {
                 const batch = lines.slice(i, i + BATCH_SIZE);
-                loadingState.innerText = 'تعداد ' + lines.length + ' پروکسی پیدا شد درحال اسکن\\nاسکن گروه ' + (Math.floor(i / BATCH_SIZE) + 1) + ' (۵ تست برای هر کدام)...';
+                loadingState.innerText = 'تعداد ' + lines.length + ' پروکسی پیدا شد درحال اسکن\nاسکن گروه ' + (Math.floor(i / BATCH_SIZE) + 1) + ' (۵ تست برای هر کدام)...';
 
                 const testResults = await Promise.allSettled(batch.map(async (candidate) => {
                     let successCount = 0;
@@ -5492,48 +5477,55 @@ async function fetchAndLoadProxy() {
         fetchBtn.disabled = false;
     }
 }
-async function testUserSocksProxy() {
-	const btn = document.getElementById('test-user-proxy-btn');
-	const resultSpan = document.getElementById('test-user-proxy-result');
-	const proxyStr = document.getElementById('user-socks5-input').value.trim();
-	if (!proxyStr) {
-		resultSpan.innerText = 'وارد نشده!';
-		resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1';
-		return;
-	}
-	btn.disabled = true;
-	btn.innerText = 'صبر کنید...';
-	resultSpan.innerText = '';
-
-	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-	try {
-		const res = await fetch('/api/test-proxy', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ proxy: proxyStr }),
-			signal: controller.signal
-		});
-		clearTimeout(timeoutId);
-		const data = await res.json();
-		if (res.ok && data.success) {
-			const flag = typeof getFlagEmoji === 'function' ? getFlagEmoji(data.country) : '🌐';
-			resultSpan.innerText = flag + ' پینگ: ' + data.ping + 'ms';
-			resultSpan.className = 'text-[11px] font-bold text-green-600';
-		} else {
-			resultSpan.innerText = 'خطا: ' + (data.error || 'ناموفق');
-			resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1 break-words';
-		}
-	} catch (e) {
-		clearTimeout(timeoutId);
-		if (e.name === 'AbortError') resultSpan.innerText = 'تایم‌اوت (پروکسی خراب است)';
-		else resultSpan.innerText = 'خطا در ارتباط';
-		resultSpan.className = 'text-[11px] font-bold text-red-500 w-full mt-1 break-words';
-	} finally {
-		btn.disabled = false;
-		btn.innerText = 'تست پروکسی';
-	}
+function toggleIpSelectorModal(show) {
+    const modal = document.getElementById('ip-selector-modal');
+    const card = modal.querySelector('div');
+    if (show) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.classList.add('opacity-100', 'pointer-events-auto');
+        card.classList.remove('opacity-0', 'scale-95');
+        card.classList.add('opacity-100', 'scale-100');
+    } else {
+        modal.classList.remove('opacity-100', 'pointer-events-auto');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        card.classList.remove('opacity-100', 'scale-100');
+        card.classList.add('opacity-0', 'scale-95');
+    }
+}
+async function openIpSelectorModal() {
+    toggleIpSelectorModal(true);
+    document.getElementById('ip-loading-state').classList.remove('hidden');
+    document.getElementById('ip-selection-form').classList.add('hidden');
+    await fetchIpsList();
+    document.getElementById('ip-loading-state').classList.add('hidden');
+    document.getElementById('ip-selection-form').classList.remove('hidden');
+}
+function applySelectedIps() {
+    const operator = document.getElementById('ip-operator-select').value;
+    let count = parseInt(document.getElementById('ip-count-input').value, 10);
+    if (isNaN(count) || count < 1) count = 10;
+    let availableIps = [];
+    if (operator === 'all') {
+        Object.values(cachedIpsData).forEach(ips => {
+            availableIps = availableIps.concat(ips);
+        });
+    } else {
+        availableIps = cachedIpsData[operator] || [];
+    }
+    availableIps = [...new Set(availableIps)];
+    let selectedIps = [];
+    if (count >= availableIps.length) {
+        selectedIps = availableIps;
+    } else {
+        const shuffled = availableIps.slice();
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        selectedIps = shuffled.slice(0, count);
+    }
+    document.getElementById('input-ips').value = selectedIps.join('\\n');
+    toggleIpSelectorModal(false);
 }
 document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('rahin_path_warned_' + CURRENT_VERSION) !== 'true') {
