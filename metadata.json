@@ -1,0 +1,6 @@
+{
+  "name": "RAHIN PANEL (Beta)",
+  "description": "Premium Enterprise Network & Proxy Management Panel for Cloudflare Workers",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
