@@ -250,31 +250,6 @@ td small.mono{font:500 11.5px var(--mono);color:var(--mut)}
 textarea.f-in{resize:vertical;min-height:70px;line-height:1.6}
 select.f-in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mut) 50%),linear-gradient(135deg,var(--mut) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat}
 /* ---------- مودال تأیید سفارشی (به‌جای confirm مرورگر) ---------- */
-function customConfirm(message){
-  return new Promise(resolve=>{
-    let veil = $('cfmVeil');
-    if(veil) veil.remove();
-    const holder = document.createElement('div');
-    holder.innerHTML = `<div class="modal-veil" id="cfmVeil">
-      <div class="modal" style="width:min(400px,calc(100vw - 32px))">
-        <div class="modal-body">
-          <p class="info-desc" style="margin:0 0 6px">${message}</p>
-          <div class="form-actions" style="padding:10px 0 0">
-            <button class="btn ghost danger" id="cfmYes" type="button">${tr('users.delbtn')}</button>
-            <button class="btn primary" id="cfmNo" type="button">${tr('users.cancel')}</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-    document.body.appendChild(holder.firstElementChild);
-    veil = $('cfmVeil');
-    veil.classList.add('show');
-    const close = (val)=>{ veil.remove(); resolve(val); };
-    $('cfmYes').onclick = ()=>close(true);
-    $('cfmNo').onclick = ()=>close(false);
-    veil.addEventListener('click', e=>{ if(e.target===veil) close(false); });
-  });
-}
 
 /* ---------- dropdown سفارشی (به جای select استاندارد) ---------- */
 .csel{position:relative;width:100%;min-width:0}
@@ -570,6 +545,33 @@ document.querySelectorAll('[data-version]').forEach(el=>{ el.textContent = PANEL
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = id => document.getElementById(id);
 
+/* ---------- custom confirmation modal ---------- */
+function customConfirm(message){
+  return new Promise(resolve=>{
+    let veil = $('cfmVeil');
+    if(veil) veil.remove();
+    const holder = document.createElement('div');
+    holder.innerHTML = `<div class="modal-veil" id="cfmVeil">
+      <div class="modal" style="width:min(400px,calc(100vw - 32px))">
+        <div class="modal-body">
+          <p class="info-desc" style="margin:0 0 6px">${message}</p>
+          <div class="form-actions" style="padding:10px 0 0">
+            <button class="btn ghost danger" id="cfmYes" type="button">${tr('users.delbtn')}</button>
+            <button class="btn primary" id="cfmNo" type="button">${tr('users.cancel')}</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    document.body.appendChild(holder.firstElementChild);
+    veil = $('cfmVeil');
+    veil.classList.add('show');
+    const close = (val)=>{ veil.remove(); resolve(val); };
+    $('cfmYes').onclick = ()=>close(true);
+    $('cfmNo').onclick = ()=>close(false);
+    veil.addEventListener('click', e=>{ if(e.target===veil) close(false); });
+  });
+}
+
 /* ---------- page teardown registry ---------- */
 let teardowns = [];
 function addTeardown(fn){ teardowns.push(fn); }
@@ -655,6 +657,7 @@ async function api(path, opts = {}){
   try{ data = await res.json(); }catch(e){ isJson = false; }
   if(!res.ok){ throw new Error((data && data.error) || ('HTTP ' + res.status)); }
   if(!isJson){ throw new Error('NOT_API'); }
+  if(!data || data.success === false){ throw new Error((data && data.error) || 'REQUEST_FAILED'); }
   return data;
 }
 /* پیام خطای خوانا برای کاربر — تا دلیل واقعی پنهان نماند */
@@ -1754,6 +1757,12 @@ function overviewInit(){
     }
   })(0);
 
+  // Keep visible dashboard cards and recent-user table current after a user action
+  // without a full page reload.
+  const onUsersChanged = () => { loadStats().catch(()=>{}); loadUsers().catch(()=>{}); loadChart().catch(()=>{}); };
+  window.addEventListener('rahin:users-changed', onUsersChanged);
+  addTeardown(() => window.removeEventListener('rahin:users-changed', onUsersChanged));
+
   const deployBtn=$('deployBtn');
   if(deployBtn) deployBtn.addEventListener('click', ()=>toast(tr('toast.deploy')));
   const exportBtn=$('exportBtn');
@@ -1773,7 +1782,7 @@ function overviewInit(){
       r.classList.remove('hit'); void r.offsetWidth; r.classList.add('hit');
       const sub=r.dataset.sub;
       if(sub){
-        const full=location.origin+sub;
+        const full=sub;
         try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(full); else { const ta=document.createElement('textarea'); ta.value=full; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } toast(tr('users.copied'), '#3ddc97'); }catch(e2){ toast(tr('users.copyerr'), '#ff6b7a'); }
       }
       return;
@@ -2243,7 +2252,7 @@ function usersInit(){
     if(act === 'copy'){
       const sub = btn.dataset.sub;
       try{
-        const full = location.origin + sub;
+        const full = sub;
         if(navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(full); }
         else { const ta=document.createElement('textarea'); ta.value=full; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
         toast(tr('users.copied')+' '+escapeHtml(found.name||''),'#3ddc97');
@@ -2251,18 +2260,18 @@ function usersInit(){
       return;
     }
     if(act === 'toggle'){
-      try{ await api('/api/users?id='+id+'&action=toggle',{method:'POST',body:{}}); load(); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
+      try{ await api('/api/users?id='+id+'&action=toggle',{method:'POST',body:{}}); await load(); window.dispatchEvent(new CustomEvent('rahin:users-changed')); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
       return;
     }
     if(act === 'reset'){
-      try{ await api('/api/users?id='+id+'&action=reset',{method:'POST',body:{}}); toast(tr('users.reseted'),'#3ddc97'); load(); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
+      try{ await api('/api/users?id='+id+'&action=reset',{method:'POST',body:{}}); toast(tr('users.reseted'),'#3ddc97'); await load(); window.dispatchEvent(new CustomEvent('rahin:users-changed')); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
       return;
     }
     if(act === 'edit'){ openUserModal(found); return; }
     if(act === 'del'){
       const ok = await customConfirm(tr('users.delconf'));
       if(!ok) return;
-      try{ await api('/api/users?id='+id,{method:'DELETE'}); toast(tr('users.del'),'#ff6b7a'); load(); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
+      try{ await api('/api/users?id='+id,{method:'DELETE'}); toast(tr('users.del'),'#ff6b7a'); await load(); window.dispatchEvent(new CustomEvent('rahin:users-changed')); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
       return;
     }
   });
@@ -2395,7 +2404,8 @@ function usersInit(){
         else await api('/api/users',{method:'POST',body});
         close();
         toast(u?tr('users.updated'):tr('users.added'),'#3ddc97');
-        load();
+        await load();
+        window.dispatchEvent(new CustomEvent('rahin:users-changed'));
       }catch(e){ err.textContent = e.message!=='UNAUTHORIZED' ? (e.message||tr('users.operr')) : ''; }
       finally{ save.disabled = false; }
     };

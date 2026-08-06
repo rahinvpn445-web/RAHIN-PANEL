@@ -234,18 +234,18 @@ function userStatus(u, usageTotal, dailyBytes) {
   return 'active';
 }
 
-async function enrichUser(env, u) {
+function buildSubscriptionUrl(request, userTag, subPath) {
+  const url = new URL(request.url);
+  const path = String(subPath || '/sub').startsWith('/') ? String(subPath || '/sub') : '/' + String(subPath || 'sub');
+  return `${url.origin}${path}?u=${encodeURIComponent(userTag)}`;
+}
+
+async function enrichUser(env, u, request, subPath) {
   let totalBytes = 0, dailyBytes = 0;
   try { const c = await usageGet(env, 'uusage:' + u.id); if (c) totalBytes = c.total || 0; } catch (e) {}
   try { const cd = await usageGet(env, 'uusage-d:' + u.id + ':' + getDateKey(new Date())); if (cd) dailyBytes = cd.total || 0; } catch (e) {}
   const status = userStatus(u, totalBytes, dailyBytes);
-  /* اگر حالت مخفی فعال باشد، لینک ساب از مسیر مخفی ساب ساخته می‌شود */
-  let subPath = '/sub';
-  try {
-    const dg = await getDisguise(env);
-    if (dg.on) subPath = dg.sub;
-  } catch (e) {}
-  const subUrl = `${subPath}?u=${encodeURIComponent(u.tag || u.username || u.id)}`;
+  const subUrl = buildSubscriptionUrl(request, u.tag || u.username || u.id, subPath || '/sub');
   return { ...u, usage: { totalBytes, dailyBytes }, status, subscriptionUrl: subUrl };
 }
 
@@ -278,6 +278,8 @@ async function handleApiUsers(request, env, url, method, UA, ip) {
 
   const ns = await loadNetworkSettings(env);
   const users = ns.users;
+  const disguise = await getDisguise(env);
+  const subscriptionPath = disguise.on ? disguise.sub : '/sub';
   const userId = url.searchParams.get('id');
   const action = url.searchParams.get('action');
   let body = {}; try { if (method !== 'GET') body = await request.clone().json(); } catch (e) {}
@@ -287,7 +289,7 @@ async function handleApiUsers(request, env, url, method, UA, ip) {
     const q = url.searchParams.get('q') || '';
     let list = users;
     if (q) { const ql = q.toLowerCase(); list = list.filter(u => (u.name || '').toLowerCase().includes(ql) || (u.id || '').toLowerCase().includes(ql) || (u.username || '').toLowerCase().includes(ql)); }
-    const enriched = await Promise.all(list.map(u => enrichUser(env, u)));
+    const enriched = await Promise.all(list.map(u => enrichUser(env, u, request, subscriptionPath)));
     return json({ success: true, users: enriched, total: enriched.length });
   }
 
@@ -295,7 +297,7 @@ async function handleApiUsers(request, env, url, method, UA, ip) {
   if (method === 'GET' && userId) {
     const u = users.find(x => x.id === userId || x.username === userId.toLowerCase() || x.name === userId);
     if (!u) return json({ success: false, error: 'User not found' }, 404);
-    return json({ success: true, user: await enrichUser(env, u) });
+    return json({ success: true, user: await enrichUser(env, u, request, subscriptionPath) });
   }
 
   // POST create
