@@ -249,6 +249,33 @@ td small.mono{font:500 11.5px var(--mono);color:var(--mut)}
 .f-in:focus{border-color:rgba(47,214,195,.5);background:rgba(47,214,195,.05);box-shadow:0 0 0 3px rgba(47,214,195,.1)}
 textarea.f-in{resize:vertical;min-height:70px;line-height:1.6}
 select.f-in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mut) 50%),linear-gradient(135deg,var(--mut) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+/* ---------- مودال تأیید سفارشی (به‌جای confirm مرورگر) ---------- */
+function customConfirm(message){
+  return new Promise(resolve=>{
+    let veil = $('cfmVeil');
+    if(veil) veil.remove();
+    const holder = document.createElement('div');
+    holder.innerHTML = `<div class="modal-veil" id="cfmVeil">
+      <div class="modal" style="width:min(400px,calc(100vw - 32px))">
+        <div class="modal-body">
+          <p class="info-desc" style="margin:0 0 6px">${message}</p>
+          <div class="form-actions" style="padding:10px 0 0">
+            <button class="btn ghost danger" id="cfmYes" type="button">${tr('users.delbtn')}</button>
+            <button class="btn primary" id="cfmNo" type="button">${tr('users.cancel')}</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    document.body.appendChild(holder.firstElementChild);
+    veil = $('cfmVeil');
+    veil.classList.add('show');
+    const close = (val)=>{ veil.remove(); resolve(val); };
+    $('cfmYes').onclick = ()=>close(true);
+    $('cfmNo').onclick = ()=>close(false);
+    veil.addEventListener('click', e=>{ if(e.target===veil) close(false); });
+  });
+}
+
 /* ---------- dropdown سفارشی (به جای select استاندارد) ---------- */
 .csel{position:relative;width:100%;min-width:0}
 .csel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font:500 12.5px var(--mono);color:var(--ink);background:rgba(126,156,198,.06);border:1px solid var(--line2);border-radius:9px;padding:9px 12px;cursor:pointer;outline:none;text-align:left;transition:border-color .2s,box-shadow .2s,background .2s}
@@ -317,6 +344,7 @@ select.f-in{appearance:none;background-image:linear-gradient(45deg,transparent 5
 .modal .frm{gap:12px 14px;margin-top:2px}
 .modal .form-actions{padding:6px 0 0}
 .modal-err{font:500 11.5px var(--mono);color:var(--red);min-height:16px;margin:2px 0 8px}
+.login-hint{font:500 11px var(--mono);color:var(--amber);background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.25);border-radius:8px;padding:7px 10px;margin-bottom:12px}
 /* ---------- social links (neon) ---------- */
 .social-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 18px;padding:4px 2px}
 .soc{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:rgba(10,17,32,.72);border:1px solid var(--line2);text-decoration:none;position:relative;transition:transform .18s ease,border-color .25s,box-shadow .3s}
@@ -590,6 +618,7 @@ function toast(msg, color){
 
 /* ---------- API client (auth-aware) ---------- */
 let _sessionToken = null;
+let _adminPassChanged = false;
 function getToken(){
   if(_sessionToken) return _sessionToken;
   try{
@@ -736,14 +765,16 @@ document.addEventListener('click', e=>{
 
 /* ---------- login modal ---------- */
 function loginModalHtml(){
+  /* اگر رمز پیش‌فرض باشد، «رمز عبور» نمایش داده می‌شود — بعد از تغییر رمز دیگر نمایش داده نمی‌شود */
+  const showDefault = !_adminPassChanged;
   return `<div class="modal-veil" id="loginVeil">
     <div class="modal">
       <div class="modal-head">
         <h2>RAHIN</h2>
-        <button class="modal-x" id="loginX" type="button" aria-label="Close">×</button>
       </div>
       <div class="modal-body">
         <div class="sub" data-i18n="login.sub">Admin sign-in required</div>
+        ${showDefault ? '<div class="login-hint" data-i18n="login.hint">Password: rahin-admin-XXXX (from deployer)</div>' : ''}
         <div class="f-field">
           <label for="loginPass" data-i18n="login.password">Admin password</label>
           <input class="f-in" id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
@@ -768,11 +799,8 @@ function showLoginModal(){
     veil.classList.add('show');
     const pass = $('loginPass'); if(pass) setTimeout(()=>pass.focus(), 60);
     const err = $('loginErr');
-    const close = ()=>{ veil.classList.remove('show'); document.removeEventListener('keydown', esc); };
-    const esc = e=>{ if(e.key==='Escape') close(); };
-    document.addEventListener('keydown', esc);
-    veil.addEventListener('click', e=>{ if(e.target===veil) close(); });
-    const x = $('loginX'); if(x) x.onclick = close;
+    /* این مودال فقط با رمز درست بسته می‌شود — بدون ضربدر، Esc یا کلیک بیرون */
+    const close = ()=>{ veil.classList.remove('show'); };
     const doLogin = async ()=>{
       err.textContent = '';
       try{
@@ -854,6 +882,7 @@ const I18N = {
     'login.btn':'Sign in',
     'login.bad':'Wrong password — try again.',
     'login.net':'Cannot reach server.',
+    'login.hint':'Default password from deployer: rahin-admin-XXXX',
     'info.ok':'Got it',
     'info.general.t':'General Config',
     'info.general.d':'This is the base of the whole panel. It sets which server the panel runs on (HOST), the ID (UUID) used to build configs, and the protocol (VLESS / Trojan / VMess) and transport (WebSocket / gRPC).\n\nHow to use: put your Worker address in HOST, add a UUID, pick a protocol and transport, then press Save.',
@@ -1019,6 +1048,7 @@ const I18N = {
     'err.http':'server error:',
     'users.reseted':'Usage reset.',
     'users.delconf':'Delete this user? This cannot be undone.',
+    'users.delbtn':'Delete',
     'users.del':'User deleted.',
     'users.edit':'Edit User',
     'users.sub':'Personal config & limits',
@@ -1187,6 +1217,7 @@ const I18N = {
     'login.btn':'ورود',
     'login.bad':'رمز اشتباه است — دوباره تلاش کنید.',
     'login.net':'ارتباط با سرور برقرار نشد.',
+    'login.hint':'رمز پیش‌فرض از deployer: rahin-admin-XXXX',
     'info.ok':'متوجه شدم',
     'info.general.t':'کانفیگ کلی',
     'info.general.d':'این پایه‌ی کل پنل است. مشخص می‌کند پنل روی چه سروری کار می‌کند (HOST)، شناسه (UUID) که برای ساخت کانفیگ‌ها استفاده می‌شود، و پروتکل (VLESS / Trojan / VMess) و انتقال (WebSocket / gRPC). کانفیگ‌ها از روی همین تنظیمات ساخته می‌شوند.\n\nچطور استفاده کنیم: آدرس ورکرت را در HOST بگذار، یک UUID بساز، پروتکل و انتقال را انتخاب کن و دکمه‌ی ذخیره را بزن.',
@@ -1352,6 +1383,7 @@ const I18N = {
     'err.http':'خطای سرور:',
     'users.reseted':'مصرف بازنشانی شد.',
     'users.delconf':'این کاربر حذف شود؟ قابل بازگشت نیست.',
+    'users.delbtn':'حذف',
     'users.del':'کاربر حذف شد.',
     'users.edit':'ویرایش کاربر',
     'users.sub':'کانفیگ شخصی و محدودیت‌ها',
@@ -2228,7 +2260,8 @@ function usersInit(){
     }
     if(act === 'edit'){ openUserModal(found); return; }
     if(act === 'del'){
-      if(!confirm(tr('users.delconf'))) return;
+      const ok = await customConfirm(tr('users.delconf'));
+      if(!ok) return;
       try{ await api('/api/users?id='+id,{method:'DELETE'}); toast(tr('users.del'),'#ff6b7a'); load(); }catch(e){ toast(tr('users.operr'),'#ff6b7a'); }
       return;
     }
@@ -2913,6 +2946,7 @@ function settingsInit(){
       passBtn.disabled = true;
       try{
         await api('/api/auth/change-password', { method:'POST', body:{ oldPassword: oldP, newPassword: newP } });
+        _adminPassChanged = true;
         $('setOldPass').value = ''; $('setNewPass').value = '';
         const s = $('setPassState');
         if(s){ s.textContent = tr('page.settings.passok'); s.classList.add('show'); setTimeout(()=>s.classList.remove('show'), 2400); }
@@ -3564,5 +3598,5 @@ window.addEventListener('popstate', e=>{
 const initial = (location.hash || '#overview').slice(1);
 navigate(PAGES[initial] ? initial : 'overview');
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a26808278b0ed2d7',t:'MTc4NTk1NjI5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

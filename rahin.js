@@ -239,7 +239,13 @@ async function enrichUser(env, u) {
   try { const c = await usageGet(env, 'uusage:' + u.id); if (c) totalBytes = c.total || 0; } catch (e) {}
   try { const cd = await usageGet(env, 'uusage-d:' + u.id + ':' + getDateKey(new Date())); if (cd) dailyBytes = cd.total || 0; } catch (e) {}
   const status = userStatus(u, totalBytes, dailyBytes);
-  const subUrl = `/sub?u=${encodeURIComponent(u.tag || u.username || u.id)}`;
+  /* اگر حالت مخفی فعال باشد، لینک ساب از مسیر مخفی ساب ساخته می‌شود */
+  let subPath = '/sub';
+  try {
+    const dg = await getDisguise(env);
+    if (dg.on) subPath = dg.sub;
+  } catch (e) {}
+  const subUrl = `${subPath}?u=${encodeURIComponent(u.tag || u.username || u.id)}`;
   return { ...u, usage: { totalBytes, dailyBytes }, status, subscriptionUrl: subUrl };
 }
 
